@@ -49,7 +49,8 @@ rb_channel_free(void *arg)
   ChannelHolder *holder = arg;
 
   if (holder->channel != NULL) {
-    ssh_channel_free(holder->channel);
+    /* XXX: ssh_channel is freed by ssh_session */
+    /* ssh_channel_free(holder->channel); */
     holder->channel = NULL;
   }
 
