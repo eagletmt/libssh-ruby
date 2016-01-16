@@ -1,0 +1,15 @@
+#ifndef LIBSSH_RUBY_H
+#define LIBSSH_RUBY_H 1
+
+#include <ruby/ruby.h>
+#include <libssh/libssh.h>
+
+extern VALUE rb_mLibSSH;
+
+void Init_libssh_ruby(void);
+void Init_libssh_session(void);
+void Init_libssh_error(void);
+
+void libssh_ruby_raise(ssh_session session);
+
+#endif /* LIBSSH_RUBY_H */

@@ -1,6 +1,6 @@
 require "libssh/version"
-require "libssh/libssh"
+require "libssh/libssh_ruby"
 
-module Libssh
+module LibSSh
   # Your code goes here...
 end

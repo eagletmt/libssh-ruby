@@ -5,7 +5,7 @@ require 'libssh/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "libssh"
-  spec.version       = Libssh::VERSION
+  spec.version       = LibSSH::VERSION
   spec.authors       = ["Kohei Suzuki"]
   spec.email         = ["eagletmt@gmail.com"]
 
