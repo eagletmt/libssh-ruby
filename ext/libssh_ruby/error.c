@@ -3,16 +3,15 @@
 VALUE rb_eLibSSHError;
 ID id_code;
 
-void Init_libssh_error(void)
-{
-  rb_eLibSSHError = rb_define_class_under(rb_mLibSSH, "Error", rb_eStandardError);
+void Init_libssh_error(void) {
+  rb_eLibSSHError =
+      rb_define_class_under(rb_mLibSSH, "Error", rb_eStandardError);
   id_code = rb_intern("code");
 
   rb_define_attr(rb_eLibSSHError, "code", 1, 0);
 }
 
-void libssh_ruby_raise(ssh_session session)
-{
+void libssh_ruby_raise(ssh_session session) {
   VALUE exc, code, message;
   VALUE argv[1];
 

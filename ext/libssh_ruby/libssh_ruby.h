@@ -13,8 +13,7 @@ void Init_libssh_error(void);
 
 void libssh_ruby_raise(ssh_session session);
 
-struct SessionHolderStruct
-{
+struct SessionHolderStruct {
   ssh_session session;
 };
 typedef struct SessionHolderStruct SessionHolder;

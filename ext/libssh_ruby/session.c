@@ -1,46 +1,41 @@
 #include "libssh_ruby.h"
 
-#define RAISE_IF_ERROR(rc) if ((rc) == SSH_ERROR) libssh_ruby_raise(holder->session)
+#define RAISE_IF_ERROR(rc) \
+  if ((rc) == SSH_ERROR) libssh_ruby_raise(holder->session)
 
 VALUE rb_cLibSSHSession;
 
 static ID id_none, id_warn, id_info, id_debug, id_trace;
-static ID id_password, id_publickey, id_hostbased, id_interactive, id_gssapi_mic;
+static ID id_password, id_publickey, id_hostbased, id_interactive,
+    id_gssapi_mic;
 
 static void session_mark(void *);
 static void session_free(void *);
 static size_t session_memsize(const void *);
 
 const rb_data_type_t session_type = {
-  "ssh_session",
-  { session_mark, session_free, session_memsize, { NULL, NULL }},
-  NULL, NULL,
-  RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FREE_IMMEDIATELY,
+    "ssh_session",
+    {session_mark, session_free, session_memsize, {NULL, NULL}},
+    NULL,
+    NULL,
+    RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
-SessionHolder *libssh_ruby_session_holder(VALUE session)
-{
+SessionHolder *libssh_ruby_session_holder(VALUE session) {
   SessionHolder *holder;
   TypedData_Get_Struct(session, SessionHolder, &session_type, holder);
   return holder;
 }
 
-static VALUE
-session_alloc(VALUE klass)
-{
+static VALUE session_alloc(VALUE klass) {
   SessionHolder *holder = ALLOC(SessionHolder);
   holder->session = NULL;
   return TypedData_Wrap_Struct(klass, &session_type, holder);
 }
 
-static void
-session_mark(RB_UNUSED_VAR(void *arg))
-{
-}
+static void session_mark(RB_UNUSED_VAR(void *arg)) {}
 
-static void
-session_free(void *arg)
-{
+static void session_free(void *arg) {
   SessionHolder *holder = arg;
   if (holder->session != NULL) {
     ssh_free(holder->session);
@@ -49,15 +44,11 @@ session_free(void *arg)
   ruby_xfree(holder);
 }
 
-static size_t
-session_memsize(RB_UNUSED_VAR(const void *arg))
-{
+static size_t session_memsize(RB_UNUSED_VAR(const void *arg)) {
   return sizeof(SessionHolder);
 }
 
-static VALUE
-m_initialize(VALUE self)
-{
+static VALUE m_initialize(VALUE self) {
   SessionHolder *holder;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
@@ -65,9 +56,7 @@ m_initialize(VALUE self)
   return self;
 }
 
-static VALUE
-m_set_log_verbosity(VALUE self, VALUE verbosity)
-{
+static VALUE m_set_log_verbosity(VALUE self, VALUE verbosity) {
   ID id_verbosity;
   int c_verbosity;
   SessionHolder *holder;
@@ -86,29 +75,27 @@ m_set_log_verbosity(VALUE self, VALUE verbosity)
   } else if (id_verbosity == id_trace) {
     c_verbosity = SSH_LOG_TRACE;
   } else {
-    rb_raise(rb_eArgError, "invalid verbosity: %"PRIsVALUE, verbosity);
+    rb_raise(rb_eArgError, "invalid verbosity: %" PRIsVALUE, verbosity);
   }
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_LOG_VERBOSITY, &c_verbosity));
+  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_LOG_VERBOSITY,
+                                 &c_verbosity));
 
   return Qnil;
 }
 
-static VALUE
-m_set_host(VALUE self, VALUE host)
-{
+static VALUE m_set_host(VALUE self, VALUE host) {
   SessionHolder *holder;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_HOST, StringValueCStr(host)));
+  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_HOST,
+                                 StringValueCStr(host)));
 
   return Qnil;
 }
 
-static VALUE
-m_parse_config(int argc, VALUE *argv, VALUE self)
-{
+static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
   SessionHolder *holder;
   VALUE path;
   char *c_path;
@@ -129,20 +116,17 @@ m_parse_config(int argc, VALUE *argv, VALUE self)
   }
 }
 
-static VALUE
-m_add_identity(VALUE self, VALUE path)
-{
+static VALUE m_add_identity(VALUE self, VALUE path) {
   SessionHolder *holder;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_ADD_IDENTITY, StringValueCStr(path)));
+  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_ADD_IDENTITY,
+                                 StringValueCStr(path)));
 
   return Qnil;
 }
 
-static VALUE
-m_connect(VALUE self)
-{
+static VALUE m_connect(VALUE self) {
   SessionHolder *holder;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
@@ -151,9 +135,7 @@ m_connect(VALUE self)
   return Qnil;
 }
 
-static VALUE
-m_server_known(VALUE self)
-{
+static VALUE m_server_known(VALUE self) {
   SessionHolder *holder;
   int rc;
 
@@ -163,9 +145,7 @@ m_server_known(VALUE self)
   return INT2FIX(rc);
 }
 
-static VALUE
-m_userauth_none(VALUE self)
-{
+static VALUE m_userauth_none(VALUE self) {
   SessionHolder *holder;
   int rc;
 
@@ -175,9 +155,7 @@ m_userauth_none(VALUE self)
   return INT2FIX(rc);
 }
 
-static VALUE
-m_userauth_list(VALUE self)
-{
+static VALUE m_userauth_list(VALUE self) {
   SessionHolder *holder;
   int list;
   VALUE ary;
@@ -187,18 +165,28 @@ m_userauth_list(VALUE self)
   RAISE_IF_ERROR(list);
 
   ary = rb_ary_new();
-  if (list & SSH_AUTH_METHOD_NONE) { rb_ary_push(ary, ID2SYM(id_none)); }
-  if (list & SSH_AUTH_METHOD_PASSWORD) { rb_ary_push(ary, ID2SYM(id_password)); }
-  if (list & SSH_AUTH_METHOD_PUBLICKEY) { rb_ary_push(ary, ID2SYM(id_publickey)); }
-  if (list & SSH_AUTH_METHOD_HOSTBASED) { rb_ary_push(ary, ID2SYM(id_hostbased)); }
-  if (list & SSH_AUTH_METHOD_INTERACTIVE) { rb_ary_push(ary, ID2SYM(id_interactive)); }
-  if (list & SSH_AUTH_METHOD_GSSAPI_MIC) { rb_ary_push(ary, ID2SYM(id_gssapi_mic)); }
+  if (list & SSH_AUTH_METHOD_NONE) {
+    rb_ary_push(ary, ID2SYM(id_none));
+  }
+  if (list & SSH_AUTH_METHOD_PASSWORD) {
+    rb_ary_push(ary, ID2SYM(id_password));
+  }
+  if (list & SSH_AUTH_METHOD_PUBLICKEY) {
+    rb_ary_push(ary, ID2SYM(id_publickey));
+  }
+  if (list & SSH_AUTH_METHOD_HOSTBASED) {
+    rb_ary_push(ary, ID2SYM(id_hostbased));
+  }
+  if (list & SSH_AUTH_METHOD_INTERACTIVE) {
+    rb_ary_push(ary, ID2SYM(id_interactive));
+  }
+  if (list & SSH_AUTH_METHOD_GSSAPI_MIC) {
+    rb_ary_push(ary, ID2SYM(id_gssapi_mic));
+  }
   return ary;
 }
 
-static VALUE
-m_userauth_publickey_auto(VALUE self)
-{
+static VALUE m_userauth_publickey_auto(VALUE self) {
   SessionHolder *holder;
   int rc;
 
@@ -208,9 +196,7 @@ m_userauth_publickey_auto(VALUE self)
   return INT2FIX(rc);
 }
 
-void
-Init_libssh_session()
-{
+void Init_libssh_session() {
   rb_cLibSSHSession = rb_define_class_under(rb_mLibSSH, "Session", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHSession, session_alloc);
 
@@ -227,14 +213,23 @@ Init_libssh_session()
   I(gssapi_mic);
 #undef I
 
-  rb_define_method(rb_cLibSSHSession, "initialize", RUBY_METHOD_FUNC(m_initialize), 0);
-  rb_define_method(rb_cLibSSHSession, "log_verbosity=", RUBY_METHOD_FUNC(m_set_log_verbosity), 1);
+  rb_define_method(rb_cLibSSHSession, "initialize",
+                   RUBY_METHOD_FUNC(m_initialize), 0);
+  rb_define_method(rb_cLibSSHSession, "log_verbosity=",
+                   RUBY_METHOD_FUNC(m_set_log_verbosity), 1);
   rb_define_method(rb_cLibSSHSession, "host=", RUBY_METHOD_FUNC(m_set_host), 1);
-  rb_define_method(rb_cLibSSHSession, "parse_config", RUBY_METHOD_FUNC(m_parse_config), -1);
-  rb_define_method(rb_cLibSSHSession, "add_identity", RUBY_METHOD_FUNC(m_add_identity), 1);
-  rb_define_method(rb_cLibSSHSession, "connect", RUBY_METHOD_FUNC(m_connect), 0);
-  rb_define_method(rb_cLibSSHSession, "server_known", RUBY_METHOD_FUNC(m_server_known), 0);
-  rb_define_method(rb_cLibSSHSession, "userauth_none", RUBY_METHOD_FUNC(m_userauth_none), 0);
-  rb_define_method(rb_cLibSSHSession, "userauth_list", RUBY_METHOD_FUNC(m_userauth_list), 0);
-  rb_define_method(rb_cLibSSHSession, "userauth_publickey_auto", RUBY_METHOD_FUNC(m_userauth_publickey_auto), 0);
+  rb_define_method(rb_cLibSSHSession, "parse_config",
+                   RUBY_METHOD_FUNC(m_parse_config), -1);
+  rb_define_method(rb_cLibSSHSession, "add_identity",
+                   RUBY_METHOD_FUNC(m_add_identity), 1);
+  rb_define_method(rb_cLibSSHSession, "connect", RUBY_METHOD_FUNC(m_connect),
+                   0);
+  rb_define_method(rb_cLibSSHSession, "server_known",
+                   RUBY_METHOD_FUNC(m_server_known), 0);
+  rb_define_method(rb_cLibSSHSession, "userauth_none",
+                   RUBY_METHOD_FUNC(m_userauth_none), 0);
+  rb_define_method(rb_cLibSSHSession, "userauth_list",
+                   RUBY_METHOD_FUNC(m_userauth_list), 0);
+  rb_define_method(rb_cLibSSHSession, "userauth_publickey_auto",
+                   RUBY_METHOD_FUNC(m_userauth_publickey_auto), 0);
 }
