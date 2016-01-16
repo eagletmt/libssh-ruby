@@ -18,11 +18,12 @@ const rb_data_type_t session_type = {
   RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FREE_IMMEDIATELY,
 };
 
-struct SessionHolderStruct
+SessionHolder *libssh_ruby_session_holder(VALUE session)
 {
-  ssh_session session;
-};
-typedef struct SessionHolderStruct SessionHolder;
+  SessionHolder *holder;
+  TypedData_Get_Struct(session, SessionHolder, &session_type, holder);
+  return holder;
+}
 
 static VALUE
 session_alloc(VALUE klass)

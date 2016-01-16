@@ -22,3 +22,15 @@ end
 if session.userauth_publickey_auto != LibSSH::AUTH_SUCCESS
   raise 'authorization failed'
 end
+
+channel = LibSSH::Channel.new(session)
+channel.open_session do
+  channel.request_exec('ps auxf')
+  loop do
+    buf = channel.read(1024)
+    if buf.empty?
+      break
+    end
+    print buf
+  end
+end

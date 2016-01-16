@@ -21,5 +21,6 @@ Init_libssh_ruby(void)
 #undef AUTH
 
   Init_libssh_session();
+  Init_libssh_channel();
   Init_libssh_error();
 }
