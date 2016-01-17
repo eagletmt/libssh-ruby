@@ -15,4 +15,5 @@ end
 
 on %w[barkhorn rossmann], in: :parallel do |host|
   execute :ruby, '-e', Shellwords.escape('puts "stdout"; $stderr.puts "stderr"')
+  execute :false, raise_on_non_zero_exit: false
 end

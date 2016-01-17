@@ -43,8 +43,8 @@ module SSHKit
               output.log_command_data(cmd, :stderr, buf)
             end
           end
-          # TODO: Set exit status correctly
-          cmd.exit_status = 0
+
+          cmd.exit_status = channel.get_exit_status
           output.log_command_exit(cmd)
         end
       end

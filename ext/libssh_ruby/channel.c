@@ -176,6 +176,19 @@ static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
   }
 }
 
+static VALUE m_get_exit_status(VALUE self) {
+  ChannelHolder *holder;
+  int rc;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  rc = ssh_channel_get_exit_status(holder->channel);
+  if (rc == -1) {
+    return Qnil;
+  } else {
+    return INT2FIX(rc);
+  }
+}
+
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHChannel, channel_alloc);
@@ -190,6 +203,8 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "read", RUBY_METHOD_FUNC(m_read), -1);
   rb_define_method(rb_cLibSSHChannel, "poll", RUBY_METHOD_FUNC(m_poll), -1);
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
+  rb_define_method(rb_cLibSSHChannel, "get_exit_status",
+                   RUBY_METHOD_FUNC(m_get_exit_status), 0);
 
   id_stderr = rb_intern("stderr");
   id_timeout = rb_intern("timeout");
