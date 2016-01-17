@@ -31,12 +31,16 @@ module SSHKit
           until channel.eof?
             stdout_avail = channel.poll(timeout: 1)
             if stdout_avail && stdout_avail > 0
-              cmd.on_stdout(channel, channel.read(BUFSIZ))
+              buf = channel.read(BUFSIZ)
+              cmd.on_stdout(channel, buf)
+              output.log_command_data(cmd, :stdout, buf)
             end
 
             stderr_avail = channel.poll(stderr: true, timeout: 1)
             if stderr_avail && stderr_avail > 0
-              cmd.on_stderr(channel, channel.read(BUFSIZ, stderr: true))
+              buf = channel.read(BUFSIZ, stderr: true)
+              cmd.on_stderr(channel, buf)
+              output.log_command_data(cmd, :stderr, buf)
             end
           end
           # TODO: Set exit status correctly
