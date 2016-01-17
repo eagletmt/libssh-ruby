@@ -9,7 +9,15 @@ session.parse_config
 session.add_identity('%d/id_ed25519')
 
 session.connect
-if session.server_known != LibSSH::SERVER_KNOWN_OK
+if session.server_known == LibSSH::SERVER_NOT_KNOWN
+  pubkey = session.get_publickey
+  print "Connect to #{pubkey.sha1_hex} ? (y/N) "
+  $stdout.flush
+  yesno = $stdin.gets.chomp
+  if yesno != 'y'
+    raise
+  end
+elsif session.server_known != LibSSH::SERVER_KNOWN_OK
   raise
 end
 

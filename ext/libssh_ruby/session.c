@@ -196,6 +196,18 @@ static VALUE m_userauth_publickey_auto(VALUE self) {
   return INT2FIX(rc);
 }
 
+static VALUE m_get_publickey(VALUE self) {
+  SessionHolder *holder;
+  KeyHolder *key_holder;
+  VALUE key;
+
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  key = rb_obj_alloc(rb_cLibSSHKey);
+  key_holder = libssh_ruby_key_holder(key);
+  RAISE_IF_ERROR(ssh_get_publickey(holder->session, &key_holder->key));
+  return key;
+}
+
 void Init_libssh_session() {
   rb_cLibSSHSession = rb_define_class_under(rb_mLibSSH, "Session", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHSession, session_alloc);
@@ -232,4 +244,6 @@ void Init_libssh_session() {
                    RUBY_METHOD_FUNC(m_userauth_list), 0);
   rb_define_method(rb_cLibSSHSession, "userauth_publickey_auto",
                    RUBY_METHOD_FUNC(m_userauth_publickey_auto), 0);
+  rb_define_method(rb_cLibSSHSession, "get_publickey",
+                   RUBY_METHOD_FUNC(m_get_publickey), 0);
 }
