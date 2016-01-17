@@ -8,9 +8,9 @@ VALUE rb_cLibSSHChannel;
 
 static ID id_stderr, id_timeout;
 
-static void rb_channel_mark(void *);
-static void rb_channel_free(void *);
-static size_t rb_channel_memsize(const void *);
+static void channel_mark(void *);
+static void channel_free(void *);
+static size_t channel_memsize(const void *);
 
 struct ChannelHolderStruct {
   ssh_channel channel;
@@ -20,7 +20,7 @@ typedef struct ChannelHolderStruct ChannelHolder;
 
 static const rb_data_type_t channel_type = {
     "ssh_channel",
-    {rb_channel_mark, rb_channel_free, rb_channel_memsize, {NULL, NULL}},
+    {channel_mark, channel_free, channel_memsize, {NULL, NULL}},
     NULL,
     NULL,
     RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_FREE_IMMEDIATELY,
@@ -33,14 +33,14 @@ static VALUE channel_alloc(VALUE klass) {
   return TypedData_Wrap_Struct(klass, &channel_type, holder);
 }
 
-static void rb_channel_mark(void *arg) {
+static void channel_mark(void *arg) {
   ChannelHolder *holder = arg;
   if (holder->channel != NULL) {
     rb_gc_mark(holder->session);
   }
 }
 
-static void rb_channel_free(void *arg) {
+static void channel_free(void *arg) {
   ChannelHolder *holder = arg;
 
   if (holder->channel != NULL) {
@@ -52,7 +52,7 @@ static void rb_channel_free(void *arg) {
   ruby_xfree(holder);
 }
 
-static size_t rb_channel_memsize(RB_UNUSED_VAR(const void *arg)) {
+static size_t channel_memsize(RB_UNUSED_VAR(const void *arg)) {
   return sizeof(ChannelHolder);
 }
 

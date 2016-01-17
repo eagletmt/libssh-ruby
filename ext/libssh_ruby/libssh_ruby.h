@@ -1,6 +1,9 @@
 #ifndef LIBSSH_RUBY_H
 #define LIBSSH_RUBY_H 1
 
+/* Don't use deprecated functions */
+#define LIBSSH_LEGACY_0_4
+
 #include <ruby/ruby.h>
 #include <libssh/libssh.h>
 
