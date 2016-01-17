@@ -136,6 +136,13 @@ static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   return ret;
 }
 
+static VALUE m_eof_p(VALUE self) {
+  ChannelHolder *holder;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  return ssh_channel_is_eof(holder->channel) ? Qtrue : Qfalse;
+}
+
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHChannel, channel_alloc);
@@ -148,6 +155,7 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "request_exec",
                    RUBY_METHOD_FUNC(m_request_exec), 1);
   rb_define_method(rb_cLibSSHChannel, "read", RUBY_METHOD_FUNC(m_read), -1);
+  rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
 
   id_stderr = rb_intern("stderr");
   id_timeout = rb_intern("timeout");

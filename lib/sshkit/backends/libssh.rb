@@ -28,14 +28,12 @@ module SSHKit
         channel = LibSSH::Channel.new(session)
         channel.open_session do
           channel.request_exec(cmd.to_command)
-          loop do
+          until channel.eof?
             # TODO: Read stderr
             buf = channel.read(BUFSIZ)
-            if buf.empty?
-              # TODO: Detect finish correctly
-              break
+            unless buf.empty?
+              cmd.on_stdout(channel, buf)
             end
-            cmd.on_stdout(channel, buf)
           end
           # TODO: Set exit status correctly
           cmd.exit_status = 0
