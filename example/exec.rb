@@ -37,7 +37,7 @@ channel = LibSSH::Channel.new(session)
 channel.open_session do
   channel.request_exec('ps auxf')
   loop do
-    buf = channel.read(1024)
+    buf = channel.read(16384)
     if buf.empty?
       break
     end
