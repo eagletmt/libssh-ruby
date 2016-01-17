@@ -208,6 +208,14 @@ static VALUE m_get_publickey(VALUE self) {
   return key;
 }
 
+static VALUE m_write_knownhost(VALUE self) {
+  SessionHolder *holder;
+
+  holder = libssh_ruby_session_holder(self);
+  RAISE_IF_ERROR(ssh_write_knownhost(holder->session));
+  return Qnil;
+}
+
 void Init_libssh_session() {
   rb_cLibSSHSession = rb_define_class_under(rb_mLibSSH, "Session", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHSession, session_alloc);
@@ -246,4 +254,6 @@ void Init_libssh_session() {
                    RUBY_METHOD_FUNC(m_userauth_publickey_auto), 0);
   rb_define_method(rb_cLibSSHSession, "get_publickey",
                    RUBY_METHOD_FUNC(m_get_publickey), 0);
+  rb_define_method(rb_cLibSSHSession, "write_knownhost",
+                   RUBY_METHOD_FUNC(m_write_knownhost), 0);
 }

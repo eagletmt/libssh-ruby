@@ -17,6 +17,8 @@ if session.server_known == LibSSH::SERVER_NOT_KNOWN
   if yesno != 'y'
     raise
   end
+  session.write_knownhost
+  puts 'Wrote known_hosts'
 elsif session.server_known != LibSSH::SERVER_KNOWN_OK
   raise
 end
