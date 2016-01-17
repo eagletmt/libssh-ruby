@@ -55,11 +55,42 @@ static VALUE m_sha1(VALUE self) {
   return hash;
 }
 
+static VALUE m_type(VALUE self) {
+  return INT2FIX(ssh_key_type(libssh_ruby_key_holder(self)->key));
+}
+
+static VALUE m_type_str(VALUE self) {
+  return rb_str_new_cstr(
+      ssh_key_type_to_char(ssh_key_type(libssh_ruby_key_holder(self)->key)));
+}
+
+static VALUE m_public_p(VALUE self) {
+  return ssh_key_is_public(libssh_ruby_key_holder(self)->key) ? Qtrue : Qfalse;
+}
+
+static VALUE m_private_p(VALUE self) {
+  return ssh_key_is_private(libssh_ruby_key_holder(self)->key) ? Qtrue : Qfalse;
+}
+
 void Init_libssh_key(void) {
   rb_cLibSSHKey = rb_define_class_under(rb_mLibSSH, "Key", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHKey, key_alloc);
 
+#define E(name) \
+  rb_define_const(rb_cLibSSHKey, "KEYTYPE_" #name, INT2FIX(SSH_KEYTYPE_##name))
+  E(UNKNOWN);
+  E(DSS);
+  E(RSA);
+  E(RSA1);
+  E(ECDSA);
+  E(ED25519);
+#undef E
+
   rb_define_method(rb_cLibSSHKey, "initialize", RUBY_METHOD_FUNC(m_initialize),
                    0);
   rb_define_method(rb_cLibSSHKey, "sha1", RUBY_METHOD_FUNC(m_sha1), 0);
+  rb_define_method(rb_cLibSSHKey, "type", RUBY_METHOD_FUNC(m_type), 0);
+  rb_define_method(rb_cLibSSHKey, "type_str", RUBY_METHOD_FUNC(m_type_str), 0);
+  rb_define_method(rb_cLibSSHKey, "public?", RUBY_METHOD_FUNC(m_public_p), 0);
+  rb_define_method(rb_cLibSSHKey, "private?", RUBY_METHOD_FUNC(m_private_p), 0);
 }

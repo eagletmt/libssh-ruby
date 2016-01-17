@@ -11,7 +11,7 @@ session.add_identity('%d/id_ed25519')
 session.connect
 if session.server_known == LibSSH::SERVER_NOT_KNOWN
   pubkey = session.get_publickey
-  print "Connect to #{pubkey.sha1_hex} ? (y/N) "
+  print "Connect to #{pubkey.type_str} #{pubkey.sha1_hex} ? (y/N) "
   $stdout.flush
   yesno = $stdin.gets.chomp
   if yesno != 'y'
