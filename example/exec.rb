@@ -33,11 +33,20 @@ if session.userauth_publickey_auto != LibSSH::AUTH_SUCCESS
   raise 'authorization failed'
 end
 
+bufsiz = 16384
+
 channel = LibSSH::Channel.new(session)
 channel.open_session do
   channel.request_exec('ps auxf')
   until channel.eof?
-    buf = channel.read(16384)
-    print buf
+    stdout_avail = channel.poll(timeout: 1)
+    if stdout_avail && stdout_avail > 0
+      $stdout.write(channel.read(bufsiz))
+    end
+
+    stderr_avail = channel.poll(stderr: true, timeout: 1)
+    if stderr_avail && stderr_avail > 0
+      $stderr.write(channel.read(bufsiz, stderr: true))
+    end
   end
 end

@@ -143,6 +143,39 @@ static VALUE m_eof_p(VALUE self) {
   return ssh_channel_is_eof(holder->channel) ? Qtrue : Qfalse;
 }
 
+static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
+  ChannelHolder *holder;
+  VALUE opts, is_stderr, timeout;
+  const ID table[] = {id_stderr, id_timeout};
+  VALUE kwvals[sizeof(table) / sizeof(*table)];
+  int rc;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  rb_scan_args(argc, argv, "00:", &opts);
+  rb_get_kwargs(opts, table, 0, 2, kwvals);
+  if (kwvals[0] == Qundef) {
+    is_stderr = Qfalse;
+  } else {
+    is_stderr = kwvals[0];
+  }
+  if (kwvals[1] == Qundef) {
+    timeout = INT2FIX(-1);
+  } else {
+    Check_Type(kwvals[1], T_FIXNUM);
+    timeout = kwvals[1];
+  }
+
+  rc = ssh_channel_poll_timeout(holder->channel, FIX2INT(timeout),
+                                RTEST(is_stderr) ? 1 : 0);
+  RAISE_IF_ERROR(rc);
+
+  if (rc == SSH_EOF) {
+    return Qnil;
+  } else {
+    return INT2FIX(rc);
+  }
+}
+
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHChannel, channel_alloc);
@@ -155,6 +188,7 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "request_exec",
                    RUBY_METHOD_FUNC(m_request_exec), 1);
   rb_define_method(rb_cLibSSHChannel, "read", RUBY_METHOD_FUNC(m_read), -1);
+  rb_define_method(rb_cLibSSHChannel, "poll", RUBY_METHOD_FUNC(m_poll), -1);
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
 
   id_stderr = rb_intern("stderr");

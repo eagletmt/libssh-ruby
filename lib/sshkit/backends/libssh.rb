@@ -29,10 +29,14 @@ module SSHKit
         channel.open_session do
           channel.request_exec(cmd.to_command)
           until channel.eof?
-            # TODO: Read stderr
-            buf = channel.read(BUFSIZ)
-            unless buf.empty?
-              cmd.on_stdout(channel, buf)
+            stdout_avail = channel.poll(timeout: 1)
+            if stdout_avail && stdout_avail > 0
+              cmd.on_stdout(channel, channel.read(BUFSIZ))
+            end
+
+            stderr_avail = channel.poll(stderr: true, timeout: 1)
+            if stderr_avail && stderr_avail > 0
+              cmd.on_stderr(channel, channel.read(BUFSIZ, stderr: true))
             end
           end
           # TODO: Set exit status correctly
