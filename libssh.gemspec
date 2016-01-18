@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
-  spec.extensions    = ["ext/libssh/extconf.rb"]
+  spec.extensions    = ["ext/libssh_ruby/extconf.rb"]
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
