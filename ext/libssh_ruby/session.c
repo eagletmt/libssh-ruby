@@ -132,8 +132,7 @@ struct nogvl_session_args {
   int rc;
 };
 
-static void *nogvl_connect(void *ptr)
-{
+static void *nogvl_connect(void *ptr) {
   struct nogvl_session_args *args = ptr;
   args->rc = ssh_connect(args->session);
   return NULL;
@@ -202,14 +201,21 @@ static VALUE m_userauth_list(VALUE self) {
   return ary;
 }
 
+static void *nogvl_userauth_publickey_auto(void *ptr) {
+  struct nogvl_session_args *args = ptr;
+  args->rc = ssh_userauth_publickey_auto(args->session, NULL, NULL);
+  return NULL;
+}
+
 static VALUE m_userauth_publickey_auto(VALUE self) {
   SessionHolder *holder;
-  int rc;
+  struct nogvl_session_args args;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  rc = ssh_userauth_publickey_auto(holder->session, NULL, NULL);
-  RAISE_IF_ERROR(rc);
-  return INT2FIX(rc);
+  args.session = holder->session;
+  rb_thread_call_without_gvl(nogvl_userauth_publickey_auto, &args, RUBY_UBF_IO,
+                             NULL);
+  return INT2FIX(args.rc);
 }
 
 static VALUE m_get_publickey(VALUE self) {
