@@ -1,4 +1,5 @@
 #include "libssh_ruby.h"
+#include <ruby/thread.h>
 
 #define RAISE_IF_ERROR(rc) \
   if ((rc) == SSH_ERROR)   \
@@ -143,36 +144,50 @@ static VALUE m_eof_p(VALUE self) {
   return ssh_channel_is_eof(holder->channel) ? Qtrue : Qfalse;
 }
 
+struct nogvl_poll_args {
+  ssh_channel channel;
+  int timeout;
+  int is_stderr;
+  int rc;
+};
+
+static void *nogvl_poll(void *ptr) {
+  struct nogvl_poll_args *args = ptr;
+  args->rc =
+      ssh_channel_poll_timeout(args->channel, args->timeout, args->is_stderr);
+  return NULL;
+}
+
 static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
   ChannelHolder *holder;
-  VALUE opts, is_stderr, timeout;
+  VALUE opts;
   const ID table[] = {id_stderr, id_timeout};
   VALUE kwvals[sizeof(table) / sizeof(*table)];
-  int rc;
+  struct nogvl_poll_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
   rb_scan_args(argc, argv, "00:", &opts);
   rb_get_kwargs(opts, table, 0, 2, kwvals);
   if (kwvals[0] == Qundef) {
-    is_stderr = Qfalse;
+    args.is_stderr = 0;
   } else {
-    is_stderr = kwvals[0];
+    args.is_stderr = RTEST(kwvals[0]) ? 1 : 0;
   }
   if (kwvals[1] == Qundef) {
-    timeout = INT2FIX(-1);
+    args.timeout = -1;
   } else {
     Check_Type(kwvals[1], T_FIXNUM);
-    timeout = kwvals[1];
+    args.timeout = FIX2INT(kwvals[1]);
   }
 
-  rc = ssh_channel_poll_timeout(holder->channel, FIX2INT(timeout),
-                                RTEST(is_stderr) ? 1 : 0);
-  RAISE_IF_ERROR(rc);
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_poll, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
 
-  if (rc == SSH_EOF) {
+  if (args.rc == SSH_EOF) {
     return Qnil;
   } else {
-    return INT2FIX(rc);
+    return INT2FIX(args.rc);
   }
 }
 
