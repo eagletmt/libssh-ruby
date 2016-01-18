@@ -29,6 +29,13 @@ See [example/exec.rb](example/exec.rb) .
 
 See [example/sshkit.rb](example/sshkit.rb) .
 
+### With Capistrano
+
+```ruby
+require 'sshkit/backends/libssh'
+set :sshkit_backend, SSHKit::Backend::Libssh
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
