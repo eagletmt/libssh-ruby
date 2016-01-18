@@ -101,14 +101,28 @@ static VALUE m_request_exec(VALUE self, VALUE cmd) {
   return Qnil;
 }
 
+struct nogvl_read_args {
+  ssh_channel channel;
+  char *buf;
+  uint32_t count;
+  int is_stderr;
+  int timeout;
+  int rc;
+};
+
+static void *nogvl_read(void *ptr) {
+  struct nogvl_read_args *args = ptr;
+  args->rc = ssh_channel_read_timeout(args->channel, args->buf, args->count,
+                                      args->is_stderr, args->timeout);
+  return NULL;
+}
+
 static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   ChannelHolder *holder;
-  VALUE count, opts, is_stderr, timeout;
+  VALUE count, opts;
   const ID table[] = {id_stderr, id_timeout};
   VALUE kwvals[sizeof(table) / sizeof(*table)];
-  char *buf;
-  uint32_t c_count;
-  int nbytes;
+  struct nogvl_read_args args;
   VALUE ret;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
@@ -116,24 +130,23 @@ static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   Check_Type(count, T_FIXNUM);
   rb_get_kwargs(opts, table, 0, 2, kwvals);
   if (kwvals[0] == Qundef) {
-    is_stderr = Qfalse;
+    args.is_stderr = 0;
   } else {
-    is_stderr = kwvals[0];
+    args.is_stderr = RTEST(kwvals[0]) ? 1 : 0;
   }
   if (kwvals[1] == Qundef) {
-    timeout = INT2FIX(-1);
+    args.timeout = -1;
   } else {
     Check_Type(kwvals[1], T_FIXNUM);
-    timeout = kwvals[1];
+    args.timeout = FIX2INT(kwvals[1]);
   }
+  args.channel = holder->channel;
+  args.count = FIX2UINT(count);
+  args.buf = ALLOC_N(char, args.count);
+  rb_thread_call_without_gvl(nogvl_read, &args, RUBY_UBF_IO, NULL);
 
-  c_count = FIX2UINT(count);
-  buf = ALLOC_N(char, c_count);
-  nbytes = ssh_channel_read_timeout(holder->channel, buf, c_count,
-                                    RTEST(is_stderr) ? 1 : 0, FIX2INT(timeout));
-
-  ret = rb_utf8_str_new(buf, nbytes);
-  ruby_xfree(buf);
+  ret = rb_utf8_str_new(args.buf, args.rc);
+  ruby_xfree(args.buf);
   return ret;
 }
 
