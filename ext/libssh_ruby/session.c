@@ -1,4 +1,5 @@
 #include "libssh_ruby.h"
+#include <ruby/thread.h>
 
 #define RAISE_IF_ERROR(rc) \
   if ((rc) == SSH_ERROR) libssh_ruby_raise(holder->session)
@@ -126,11 +127,26 @@ static VALUE m_add_identity(VALUE self, VALUE path) {
   return Qnil;
 }
 
+struct nogvl_session_args {
+  ssh_session session;
+  int rc;
+};
+
+static void *nogvl_connect(void *ptr)
+{
+  struct nogvl_session_args *args = ptr;
+  args->rc = ssh_connect(args->session);
+  return NULL;
+}
+
 static VALUE m_connect(VALUE self) {
   SessionHolder *holder;
+  struct nogvl_session_args args;
 
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  RAISE_IF_ERROR(ssh_connect(holder->session));
+  args.session = holder->session;
+  rb_thread_call_without_gvl(nogvl_connect, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
 
   return Qnil;
 }
