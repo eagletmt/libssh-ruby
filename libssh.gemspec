@@ -13,6 +13,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'Ruby binding for libssh.'
   spec.homepage      = 'https://github.com/eagletmt/libssh-ruby'
   spec.license       = 'MIT'
+  spec.required_ruby_version = '>= 2.2.0'
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
