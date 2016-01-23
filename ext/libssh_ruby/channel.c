@@ -306,6 +306,23 @@ static VALUE m_write(VALUE self, VALUE data) {
   return INT2FIX(args.rc);
 }
 
+static void *nogvl_send_eof(void *ptr) {
+  struct nogvl_channel_args *args = ptr;
+  args->rc = ssh_channel_send_eof(args->channel);
+  return NULL;
+}
+
+static VALUE m_send_eof(VALUE self) {
+  ChannelHolder *holder;
+  struct nogvl_channel_args args;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_send_eof, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return Qnil;
+}
+
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHChannel, channel_alloc);
@@ -325,6 +342,8 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "get_exit_status",
                    RUBY_METHOD_FUNC(m_get_exit_status), 0);
   rb_define_method(rb_cLibSSHChannel, "write", RUBY_METHOD_FUNC(m_write), 1);
+  rb_define_method(rb_cLibSSHChannel, "send_eof", RUBY_METHOD_FUNC(m_send_eof),
+                   0);
 
   id_stderr = rb_intern("stderr");
   id_timeout = rb_intern("timeout");
