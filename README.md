@@ -1,4 +1,5 @@
 # LibSSH
+[![Gem Version](https://badge.fury.io/rb/libssh.svg)](https://badge.fury.io/rb/libssh)
 [![Build Status](https://travis-ci.org/eagletmt/libssh-ruby.svg?branch=master)](https://travis-ci.org/eagletmt/libssh-ruby)
 
 Ruby binding for [libssh](https://www.libssh.org/) .
