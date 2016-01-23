@@ -91,13 +91,28 @@ static VALUE m_open_session(VALUE self) {
   }
 }
 
+struct nogvl_request_exec_args {
+  ssh_channel channel;
+  char *cmd;
+  int rc;
+};
+
+static void *nogvl_request_exec(void *ptr) {
+  struct nogvl_request_exec_args *args = ptr;
+  args->rc = ssh_channel_request_exec(args->channel, args->cmd);
+
+  return NULL;
+}
+
 static VALUE m_request_exec(VALUE self, VALUE cmd) {
   ChannelHolder *holder;
+  struct nogvl_request_exec_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
-  RAISE_IF_ERROR(
-      ssh_channel_request_exec(holder->channel, StringValueCStr(cmd)));
-
+  args.channel = holder->channel;
+  args.cmd = StringValueCStr(cmd);
+  rb_thread_call_without_gvl(nogvl_request_exec, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
   return Qnil;
 }
 
