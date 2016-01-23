@@ -1,5 +1,6 @@
 language: ruby
-sudo: false
+sudo: required
+dist: trusty  # Require libssh >= 0.6.0
 addons:
   apt:
     packages:
