@@ -279,6 +279,33 @@ static VALUE m_get_exit_status(VALUE self) {
   }
 }
 
+struct nogvl_write_args {
+  ssh_channel channel;
+  const void *data;
+  uint32_t len;
+  int rc;
+};
+
+static void *nogvl_write(void *ptr) {
+  struct nogvl_write_args *args = ptr;
+  args->rc = ssh_channel_write(args->channel, args->data, args->len);
+  return NULL;
+}
+
+static VALUE m_write(VALUE self, VALUE data) {
+  ChannelHolder *holder;
+  struct nogvl_write_args args;
+
+  Check_Type(data, T_STRING);
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.channel = holder->channel;
+  args.data = RSTRING_PTR(data);
+  args.len = RSTRING_LEN(data);
+  rb_thread_call_without_gvl(nogvl_write, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return INT2FIX(args.rc);
+}
+
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHChannel, channel_alloc);
@@ -297,6 +324,7 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
   rb_define_method(rb_cLibSSHChannel, "get_exit_status",
                    RUBY_METHOD_FUNC(m_get_exit_status), 0);
+  rb_define_method(rb_cLibSSHChannel, "write", RUBY_METHOD_FUNC(m_write), 1);
 
   id_stderr = rb_intern("stderr");
   id_timeout = rb_intern("timeout");
