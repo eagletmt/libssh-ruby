@@ -69,19 +69,28 @@ static VALUE m_initialize(VALUE self, VALUE session) {
   return self;
 }
 
-static VALUE m_close(VALUE self) {
-  ChannelHolder *holder;
-
-  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
-  RAISE_IF_ERROR(ssh_channel_close(holder->channel));
-
-  return Qnil;
-}
-
 struct nogvl_channel_args {
   ssh_channel channel;
   int rc;
 };
+
+static void *nogvl_close(void *ptr) {
+  struct nogvl_channel_args *args = ptr;
+  args->rc = ssh_channel_close(args->channel);
+  return NULL;
+}
+
+static VALUE m_close(VALUE self) {
+  ChannelHolder *holder;
+  struct nogvl_channel_args args;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_close, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+
+  return Qnil;
+}
 
 static void *nogvl_open_session(void *ptr) {
   struct nogvl_channel_args *args = ptr;
