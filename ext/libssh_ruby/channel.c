@@ -78,11 +78,25 @@ static VALUE m_close(VALUE self) {
   return Qnil;
 }
 
+struct nogvl_channel_args {
+  ssh_channel channel;
+  int rc;
+};
+
+static void *nogvl_open_session(void *ptr) {
+  struct nogvl_channel_args *args = ptr;
+  args->rc = ssh_channel_open_session(args->channel);
+  return NULL;
+}
+
 static VALUE m_open_session(VALUE self) {
   ChannelHolder *holder;
+  struct nogvl_channel_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
-  RAISE_IF_ERROR(ssh_channel_open_session(holder->channel));
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_open_session, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
 
   if (rb_block_given_p()) {
     return rb_ensure(rb_yield, Qnil, m_close, self);
@@ -116,20 +130,15 @@ static VALUE m_request_exec(VALUE self, VALUE cmd) {
   return Qnil;
 }
 
-struct nogvl_request_pty_args {
-  ssh_channel channel;
-  int rc;
-};
-
 static void *nogvl_request_pty(void *ptr) {
-  struct nogvl_request_pty_args *args = ptr;
+  struct nogvl_channel_args *args = ptr;
   args->rc = ssh_channel_request_pty(args->channel);
   return NULL;
 }
 
 static VALUE m_request_pty(VALUE self) {
   ChannelHolder *holder;
-  struct nogvl_request_pty_args args;
+  struct nogvl_channel_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
   args.channel = holder->channel;
