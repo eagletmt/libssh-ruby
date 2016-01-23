@@ -1,6 +1,6 @@
 require 'mkmf'
 
-$CFLAGS << ' -Wall -W -ggdb3'
+$CFLAGS << ' -Wall -W'
 
 have_header('libssh/libssh.h')
 have_library('ssh')
