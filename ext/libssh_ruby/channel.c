@@ -259,16 +259,23 @@ static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
   }
 }
 
+static void *nogvl_get_exit_status(void *ptr) {
+  struct nogvl_channel_args *args = ptr;
+  args->rc = ssh_channel_get_exit_status(args->channel);
+  return NULL;
+}
+
 static VALUE m_get_exit_status(VALUE self) {
   ChannelHolder *holder;
-  int rc;
+  struct nogvl_channel_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
-  rc = ssh_channel_get_exit_status(holder->channel);
-  if (rc == -1) {
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_get_exit_status, &args, RUBY_UBF_IO, NULL);
+  if (args.rc == -1) {
     return Qnil;
   } else {
-    return INT2FIX(rc);
+    return INT2FIX(args.rc);
   }
 }
 
