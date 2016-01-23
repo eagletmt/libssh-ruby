@@ -5,6 +5,9 @@ require 'sshkit/backends/libssh'
 require 'sshkit/dsl'
 
 SSHKit.config.backend = SSHKit::Backend::Libssh
+SSHKit.config.backend.configure do |backend|
+  backend.pty = ENV.key?('REQUEST_PTY')
+end
 SSHKit.config.output = SSHKit::Formatter::Pretty.new($stdout)
 SSHKit.config.output_verbosity = :debug
 

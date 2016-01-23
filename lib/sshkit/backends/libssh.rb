@@ -5,12 +5,25 @@ require 'sshkit/backends/connection_pool'
 module SSHKit
   module Backend
     class Libssh < Abstract
+      class Configuration
+        attr_accessor :pty
+
+        def initialize
+          self.pty = false
+        end
+      end
+
       BUFSIZ = 16384
 
       @pool = SSHKit::Backend::ConnectionPool.new
 
       class << self
         attr_accessor :pool
+
+        # @override
+        def config
+          @config ||= Configuration.new
+        end
       end
 
       private
@@ -22,6 +35,9 @@ module SSHKit
         with_session do |session|
           channel = LibSSH::Channel.new(session)
           channel.open_session do
+            if Libssh.config.pty
+              channel.request_pty
+            end
             channel.request_exec(cmd.to_command)
             until channel.eof?
               stdout_avail = channel.poll(timeout: 1)

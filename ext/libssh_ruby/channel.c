@@ -101,6 +101,28 @@ static VALUE m_request_exec(VALUE self, VALUE cmd) {
   return Qnil;
 }
 
+struct nogvl_request_pty_args {
+  ssh_channel channel;
+  int rc;
+};
+
+static void *nogvl_request_pty(void *ptr) {
+  struct nogvl_request_pty_args *args = ptr;
+  args->rc = ssh_channel_request_pty(args->channel);
+  return NULL;
+}
+
+static VALUE m_request_pty(VALUE self) {
+  ChannelHolder *holder;
+  struct nogvl_request_pty_args args;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_request_pty, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return Qnil;
+}
+
 struct nogvl_read_args {
   ssh_channel channel;
   char *buf;
@@ -228,6 +250,8 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "close", RUBY_METHOD_FUNC(m_close), 0);
   rb_define_method(rb_cLibSSHChannel, "request_exec",
                    RUBY_METHOD_FUNC(m_request_exec), 1);
+  rb_define_method(rb_cLibSSHChannel, "request_pty",
+                   RUBY_METHOD_FUNC(m_request_pty), 0);
   rb_define_method(rb_cLibSSHChannel, "read", RUBY_METHOD_FUNC(m_read), -1);
   rb_define_method(rb_cLibSSHChannel, "poll", RUBY_METHOD_FUNC(m_poll), -1);
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
