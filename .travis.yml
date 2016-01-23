@@ -9,6 +9,8 @@ rvm:
   - 2.2
   - 2.3.0
   - ruby-head
+before_install:
+  - gem install --no-rdoc --no-ri bundler
 matrix:
   allow_failures:
     - rvm: ruby-head
