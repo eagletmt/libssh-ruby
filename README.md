@@ -1,9 +1,16 @@
 # LibSSH
+[![Build Status](https://travis-ci.org/eagletmt/libssh-ruby.svg?branch=master)](https://travis-ci.org/eagletmt/libssh-ruby)
+
 Ruby binding for [libssh](https://www.libssh.org/) .
 
 ## Stability
 
 Under development
+
+## Requirement
+
+- libssh >= 0.6.0
+    - ed25519 keys support is available from [libssh 0.7.0](https://www.libssh.org/2015/05/11/libssh-0-7-0/).
 
 ## Installation
 
@@ -23,7 +30,7 @@ Or install it yourself as:
 
 ## Usage
 
-See [example/exec.rb](example/exec.rb) .
+See [example/exec.rb](example/exec.rb) and [example/write.rb](example/write.rb).
 
 ### With SSHKit
 
