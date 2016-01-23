@@ -83,7 +83,7 @@ void Init_libssh_key(void) {
   E(RSA);
   E(RSA1);
   E(ECDSA);
-#ifdef SSH_KEYTYPE_ED25519
+#ifdef HAVE_CONST_SSH_KEYTYPE_ED25519
   E(ED25519);
 #endif
 #undef E
