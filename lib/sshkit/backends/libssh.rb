@@ -64,8 +64,8 @@ module SSHKit
         end
       end
 
-      def with_session(&block)
-        entry = self.class.pool.checkout(host.hostname) do |hostname|
+      def with_session
+        entry = self.class.pool.checkout(host.hostname) do
           LibSSH::Session.new.tap do |session|
             session.host = host.hostname
             session.parse_config
@@ -82,7 +82,7 @@ module SSHKit
         end
 
         begin
-          block.call(entry.connection)
+          yield entry.connection
         ensure
           self.class.pool.checkin(entry)
         end

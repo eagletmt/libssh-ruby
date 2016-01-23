@@ -1,0 +1,7 @@
+Style/Documentation:
+  Exclude:
+    - 'spec/**/*'
+    - 'test/**/*'
+    - 'lib/libssh.rb'
+    - 'lib/libssh/key.rb'
+    - 'lib/sshkit/backends/libssh.rb'

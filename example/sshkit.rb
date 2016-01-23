@@ -16,7 +16,7 @@ on %w[barkhorn rossmann], in: :parallel do |host|
   puts "#{host}: #{date}"
 end
 
-on %w[barkhorn rossmann], in: :parallel do |host|
+on %w[barkhorn rossmann], in: :parallel do
   execute :ruby, '-e', Shellwords.escape('puts "stdout"; $stderr.puts "stderr"')
   execute :false, raise_on_non_zero_exit: false
 end

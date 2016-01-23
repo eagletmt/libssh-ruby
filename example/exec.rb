@@ -3,7 +3,7 @@ require 'libssh'
 
 GC.stress = true
 session = LibSSH::Session.new
-#session.log_verbosity = :debug
+# session.log_verbosity = :debug
 session.host = 'barkhorn'
 session.parse_config
 session.add_identity('%d/id_ed25519')
