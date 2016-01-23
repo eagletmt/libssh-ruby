@@ -6,10 +6,13 @@ module SSHKit
   module Backend
     class Libssh < Abstract
       class Configuration
-        attr_accessor :pty
+        attr_accessor :pty, :connection_timeout, :ssh_options
 
         def initialize
+          super
           self.pty = false
+          self.connection_timeout = 30
+          self.ssh_options = {}
         end
       end
 
