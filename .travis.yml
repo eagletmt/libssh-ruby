@@ -1,5 +1,9 @@
 language: ruby
 sudo: false
+addons:
+  apt:
+    packages:
+      - libssh-dev
 rvm:
   - 2.1
   - 2.2
