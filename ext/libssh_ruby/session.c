@@ -86,14 +86,19 @@ static VALUE m_set_log_verbosity(VALUE self, VALUE verbosity) {
   return Qnil;
 }
 
-static VALUE m_set_host(VALUE self, VALUE host) {
+static VALUE set_string_option(VALUE self, enum ssh_options_e type, VALUE str) {
   SessionHolder *holder;
-
   TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
-  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_HOST,
-                                 StringValueCStr(host)));
-
+  RAISE_IF_ERROR(ssh_options_set(holder->session, type, StringValueCStr(str)));
   return Qnil;
+}
+
+static VALUE m_set_host(VALUE self, VALUE host) {
+  return set_string_option(self, SSH_OPTIONS_HOST, host);
+}
+
+static VALUE m_set_user(VALUE self, VALUE user) {
+  return set_string_option(self, SSH_OPTIONS_USER, user);
 }
 
 static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
@@ -260,6 +265,7 @@ void Init_libssh_session() {
   rb_define_method(rb_cLibSSHSession, "log_verbosity=",
                    RUBY_METHOD_FUNC(m_set_log_verbosity), 1);
   rb_define_method(rb_cLibSSHSession, "host=", RUBY_METHOD_FUNC(m_set_host), 1);
+  rb_define_method(rb_cLibSSHSession, "user=", RUBY_METHOD_FUNC(m_set_user), 1);
   rb_define_method(rb_cLibSSHSession, "parse_config",
                    RUBY_METHOD_FUNC(m_parse_config), -1);
   rb_define_method(rb_cLibSSHSession, "add_identity",

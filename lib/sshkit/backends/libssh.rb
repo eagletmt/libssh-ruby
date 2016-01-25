@@ -65,9 +65,14 @@ module SSHKit
       end
 
       def with_session
-        entry = self.class.pool.checkout(host.hostname) do
+        host.ssh_options = Libssh.config.ssh_options.merge(host.ssh_options || {})
+        entry = self.class.pool.checkout(String(host.hostname), host.username, host.netssh_options) do |hostname, username, ssh_options|
           LibSSH::Session.new.tap do |session|
-            session.host = host.hostname
+            session.host = hostname
+            username = ssh_options.fetch(:user, username)
+            if username
+              session.user = username
+            end
             session.parse_config
             session.add_identity('%d/id_ed25519')
 
