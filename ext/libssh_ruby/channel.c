@@ -286,7 +286,8 @@ static void *nogvl_poll(void *ptr) {
  *  @param [Boolean] is_stderr A boolean to select the stderr stream.
  *  @param [Fixnum] timeout A timeout in milliseconds. A negative value means an
  *    infinite timeout.
- *  @return [nil]
+ *  @return [Fixnum, nil] The number of bytes available for reading. +nil+ if
+ *    timed out.
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_poll_timeout
  */
