@@ -101,6 +101,21 @@ static VALUE m_set_user(VALUE self, VALUE user) {
   return set_string_option(self, SSH_OPTIONS_USER, user);
 }
 
+static VALUE set_int_option(VALUE self, enum ssh_options_e type, VALUE i) {
+  SessionHolder *holder;
+  int j;
+
+  Check_Type(i, T_FIXNUM);
+  j = FIX2INT(i);
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  RAISE_IF_ERROR(ssh_options_set(holder->session, type, &j));
+  return Qnil;
+}
+
+static VALUE m_set_port(VALUE self, VALUE port) {
+  return set_int_option(self, SSH_OPTIONS_PORT, port);
+}
+
 static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
   SessionHolder *holder;
   VALUE path;
@@ -262,10 +277,13 @@ void Init_libssh_session() {
 
   rb_define_method(rb_cLibSSHSession, "initialize",
                    RUBY_METHOD_FUNC(m_initialize), 0);
+
   rb_define_method(rb_cLibSSHSession, "log_verbosity=",
                    RUBY_METHOD_FUNC(m_set_log_verbosity), 1);
   rb_define_method(rb_cLibSSHSession, "host=", RUBY_METHOD_FUNC(m_set_host), 1);
   rb_define_method(rb_cLibSSHSession, "user=", RUBY_METHOD_FUNC(m_set_user), 1);
+  rb_define_method(rb_cLibSSHSession, "port=", RUBY_METHOD_FUNC(m_set_port), 1);
+
   rb_define_method(rb_cLibSSHSession, "parse_config",
                    RUBY_METHOD_FUNC(m_parse_config), -1);
   rb_define_method(rb_cLibSSHSession, "add_identity",

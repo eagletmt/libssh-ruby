@@ -73,6 +73,9 @@ module SSHKit
             if username
               session.user = username
             end
+            if ssh_options[:port]
+              session.port = ssh_options[:port]
+            end
             session.parse_config
             session.add_identity('%d/id_ed25519')
 
