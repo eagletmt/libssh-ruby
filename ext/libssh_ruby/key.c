@@ -41,6 +41,13 @@ KeyHolder *libssh_ruby_key_holder(VALUE key) {
   return holder;
 }
 
+/*
+ * @overload sha1
+ *  Return the hash in SHA1 form.
+ *  @since 0.1.0
+ *  @return [String]
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html
+ */
 static VALUE m_sha1(VALUE self) {
   KeyHolder *holder;
   unsigned char *c_hash;
@@ -55,19 +62,48 @@ static VALUE m_sha1(VALUE self) {
   return hash;
 }
 
+/*
+ * @overload type
+ *  Return the type of a SSH key.
+ *  @since 0.1.0
+ *  @return [Fixnum]
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_type
+ */
 static VALUE m_type(VALUE self) {
   return INT2FIX(ssh_key_type(libssh_ruby_key_holder(self)->key));
 }
 
+/*
+ * @overload type_str
+ *  Return the type of a SSH key in string format.
+ *  @since 0.1.0
+ *  @return [String]
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_type and
+ *    ssh_key_type_to_char
+ */
 static VALUE m_type_str(VALUE self) {
   return rb_str_new_cstr(
       ssh_key_type_to_char(ssh_key_type(libssh_ruby_key_holder(self)->key)));
 }
 
+/*
+ * @overload public?
+ *  Check if the key is a public key.
+ *  @since 0.1.0
+ *  @return [Boolean]
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_is_public
+ */
 static VALUE m_public_p(VALUE self) {
   return ssh_key_is_public(libssh_ruby_key_holder(self)->key) ? Qtrue : Qfalse;
 }
 
+/*
+ * @overload private?
+ *  Check if the key is a private key.
+ *  @since 0.1.0
+ *  @return [Boolean]
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_is_private
+ */
 static VALUE m_private_p(VALUE self) {
   return ssh_key_is_private(libssh_ruby_key_holder(self)->key) ? Qtrue : Qfalse;
 }

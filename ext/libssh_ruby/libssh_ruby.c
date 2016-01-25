@@ -2,6 +2,17 @@
 
 VALUE rb_mLibSSH;
 
+/*
+ * @overload version(req_version = 0)
+ *  When +req_version+ is given, check if libssh is the required version.
+ *  When +req_version+ isn't given, return the libssh version string.
+ *
+ *  @since 0.2.0
+ *  @param [Fixnum] req_version The version required.
+ *  @return [String, nil] The libssh version string if it's newer than
+ *    +req_version+ .
+ *  @see http://api.libssh.org/stable/group__libssh__misc.html
+ */
 static VALUE m_version(int argc, VALUE *argv, RB_UNUSED_VAR(VALUE self)) {
   VALUE req_version;
   int c_req_version = 0;

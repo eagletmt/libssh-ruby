@@ -80,6 +80,14 @@ static void *nogvl_close(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload close
+ *  Close a channel.
+ *  @since 0.1.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_close
+ */
 static VALUE m_close(VALUE self) {
   ChannelHolder *holder;
   struct nogvl_channel_args args;
@@ -98,6 +106,15 @@ static void *nogvl_open_session(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload open_session
+ *  Open a session channel, and close it after the block.
+ *  @since 0.1.0
+ *  @yieldparam [Channel] channel self
+ *  @return [Object] Return value of the block
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_open_session
+ */
 static VALUE m_open_session(VALUE self) {
   ChannelHolder *holder;
   struct nogvl_channel_args args;
@@ -127,6 +144,15 @@ static void *nogvl_request_exec(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload request_exec(cmd)
+ *  Run a shell command without an interactive shell.
+ *  @since 0.1.0
+ *  @param [String] cmd The command to execute
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_request_exec
+ */
 static VALUE m_request_exec(VALUE self, VALUE cmd) {
   ChannelHolder *holder;
   struct nogvl_request_exec_args args;
@@ -145,6 +171,14 @@ static void *nogvl_request_pty(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload request_pty
+ *  Request a PTY.
+ *  @since 0.1.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_request_pty
+ */
 static VALUE m_request_pty(VALUE self) {
   ChannelHolder *holder;
   struct nogvl_channel_args args;
@@ -172,6 +206,17 @@ static void *nogvl_read(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload read(count, is_stderr: false, timeout: -1)
+ *  Read data from a channel.
+ *  @since 0.1.0
+ *  @param [Fixnum] count The count of bytes to be read.
+ *  @param [Boolean] is_stderr Read from the stderr flow or not.
+ *  @param [Fixnum] timeout A timeout in seconds. +-1+ means infinite timeout.
+ *  @return [String] Data read from the channel.
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_read_timeout
+ */
 static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   ChannelHolder *holder;
   VALUE count, opts;
@@ -205,6 +250,14 @@ static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   return ret;
 }
 
+/*
+ * @overload eof?
+ *  Check if remote ha sent an EOF.
+ *  @since 0.1.0
+ *  @return [Boolean]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_is_eof
+ */
 static VALUE m_eof_p(VALUE self) {
   ChannelHolder *holder;
 
@@ -226,6 +279,17 @@ static void *nogvl_poll(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload poll(is_stderr: false, timeout: -1)
+ *  Poll a channel for data to read.
+ *  @since 0.1.0
+ *  @param [Boolean] is_stderr A boolean to select the stderr stream.
+ *  @param [Fixnum] timeout A timeout in milliseconds. A negative value means an
+ *    infinite timeout.
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_poll_timeout
+ */
 static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
   ChannelHolder *holder;
   VALUE opts;
@@ -265,6 +329,15 @@ static void *nogvl_get_exit_status(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload get_exit_status
+ *  Get the exit status of the channel.
+ *  @since 0.1.0
+ *  @return [Fixnum, nil] The exit status. +nil+ if no exit status has been
+ *    returned.
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_get_exit_status
+ */
 static VALUE m_get_exit_status(VALUE self) {
   ChannelHolder *holder;
   struct nogvl_channel_args args;
@@ -292,6 +365,15 @@ static void *nogvl_write(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload write(data)
+ *  Write data on the channel.
+ *  @since 0.1.0
+ *  @param [String] data Data to write.
+ *  @return [Fixnum] The number of bytes written.
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_write
+ */
 static VALUE m_write(VALUE self, VALUE data) {
   ChannelHolder *holder;
   struct nogvl_write_args args;
@@ -312,6 +394,14 @@ static void *nogvl_send_eof(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload send_eof
+ *  Send EOF on the channel.
+ *  @since 0.1.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_send_eof
+ */
 static VALUE m_send_eof(VALUE self) {
   ChannelHolder *holder;
   struct nogvl_channel_args args;

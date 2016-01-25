@@ -57,6 +57,14 @@ static VALUE m_initialize(VALUE self) {
   return self;
 }
 
+/*
+ * @overload log_verbosity=(verbosity)
+ *  Set the session logging verbosity.
+ *  @since 0.1.0
+ *  @param [Symbol] verbosity +:none+, +:warn+, +:info+, +:debug+, or +:trace+.
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_LOG_VERBOSITY)
+ */
 static VALUE m_set_log_verbosity(VALUE self, VALUE verbosity) {
   ID id_verbosity;
   int c_verbosity;
@@ -93,10 +101,26 @@ static VALUE set_string_option(VALUE self, enum ssh_options_e type, VALUE str) {
   return Qnil;
 }
 
+/*
+ * @overload host=(host)
+ *  Set the hostname or IP address to connect to.
+ *  @since 0.1.0
+ *  @param [String] host
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_HOST)
+ */
 static VALUE m_set_host(VALUE self, VALUE host) {
   return set_string_option(self, SSH_OPTIONS_HOST, host);
 }
 
+/*
+ * @overload user=(user)
+ *  Set the username for authentication.
+ *  @since 0.2.0
+ *  @param [String] user
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_USER)
+ */
 static VALUE m_set_user(VALUE self, VALUE user) {
   return set_string_option(self, SSH_OPTIONS_USER, user);
 }
@@ -112,10 +136,26 @@ static VALUE set_int_option(VALUE self, enum ssh_options_e type, VALUE i) {
   return Qnil;
 }
 
+/*
+ * @overload port=(port)
+ *  Set the port to connect to.
+ *  @since 0.2.0
+ *  @param [Fixnum] port
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_PORT)
+ */
 static VALUE m_set_port(VALUE self, VALUE port) {
   return set_int_option(self, SSH_OPTIONS_PORT, port);
 }
 
+/*
+ * @overload parse_config(path = nil)
+ *  Parse the ssh_config file.
+ *  @since 0.1.0
+ *  @param [String, nil] Path to ssh_config. If +nil+, the default ~/.ssh/config will be used.
+ *  @return [Boolean] Parsing the ssh_config was successful or not.
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_parse_config
+ */
 static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
   SessionHolder *holder;
   VALUE path;
@@ -137,6 +177,14 @@ static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
   }
 }
 
+/*
+ * @overload add_identity(path_format)
+ *  Add the identity file name format.
+ *  @since 0.1.0
+ *  @param [String] path_format Format string for identity file.
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_ADD_IDENTITY)
+ */
 static VALUE m_add_identity(VALUE self, VALUE path) {
   SessionHolder *holder;
 
@@ -158,6 +206,13 @@ static void *nogvl_connect(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload connect
+ *  Connect to the SSH server.
+ *  @since 0.1.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_connect
+ */
 static VALUE m_connect(VALUE self) {
   SessionHolder *holder;
   struct nogvl_session_args args;
@@ -170,6 +225,13 @@ static VALUE m_connect(VALUE self) {
   return Qnil;
 }
 
+/*
+ * @overload server_known
+ *  Check if the server is knonw.
+ *  @since 0.1.0
+ *  @return [Fixnum]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_is_server_known
+ */
 static VALUE m_server_known(VALUE self) {
   SessionHolder *holder;
   int rc;
@@ -180,6 +242,13 @@ static VALUE m_server_known(VALUE self) {
   return INT2FIX(rc);
 }
 
+/*
+ * @overload userauth_none
+ *  Try to authenticate through then "none" method.
+ *  @since 0.1.0
+ *  @return [Fixnum]
+ *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_none
+ */
 static VALUE m_userauth_none(VALUE self) {
   SessionHolder *holder;
   int rc;
@@ -190,6 +259,13 @@ static VALUE m_userauth_none(VALUE self) {
   return INT2FIX(rc);
 }
 
+/*
+ * @overload userauth_list
+ *  Get available authentication methods from the server.
+ *  @since 0.1.0
+ *  @return [Array<Symbol>]
+ *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_list
+ */
 static VALUE m_userauth_list(VALUE self) {
   SessionHolder *holder;
   int list;
@@ -227,6 +303,13 @@ static void *nogvl_userauth_publickey_auto(void *ptr) {
   return NULL;
 }
 
+/*
+ * @overload userauth_publickey_auto
+ *  Try to automatically authenticate with public key and "none".
+ *  @since 0.1.0
+ *  @return [Fixnum]
+ *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_publickey_auto
+ */
 static VALUE m_userauth_publickey_auto(VALUE self) {
   SessionHolder *holder;
   struct nogvl_session_args args;
@@ -238,6 +321,13 @@ static VALUE m_userauth_publickey_auto(VALUE self) {
   return INT2FIX(args.rc);
 }
 
+/*
+ * @overload get_publickey
+ *  Get the server public key from a session.
+ *  @since 0.1.0
+ *  @return [Key]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_get_publickey
+ */
 static VALUE m_get_publickey(VALUE self) {
   SessionHolder *holder;
   KeyHolder *key_holder;
@@ -250,6 +340,13 @@ static VALUE m_get_publickey(VALUE self) {
   return key;
 }
 
+/*
+ * @overload write_knownhost
+ *  Write the current server as known in the known_hosts file.
+ *  @since 0.1.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_write_knownhost
+ */
 static VALUE m_write_knownhost(VALUE self) {
   SessionHolder *holder;
 
