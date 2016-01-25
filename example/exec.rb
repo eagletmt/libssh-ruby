@@ -2,6 +2,8 @@
 require 'libssh'
 
 GC.stress = true
+puts "libssh #{LibSSH::LIBSSH_VERSION}"
+puts LibSSH.version
 session = LibSSH::Session.new
 # session.log_verbosity = :debug
 session.host = 'barkhorn'
