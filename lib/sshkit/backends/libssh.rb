@@ -76,7 +76,18 @@ module SSHKit
             if ssh_options[:port]
               session.port = ssh_options[:port]
             end
-            session.parse_config
+            ssh_options.fetch(:config, true).tap do |config|
+              case config
+              when true
+                # Load from default ssh_config
+                session.parse_config
+              when false, nil
+                # Don't load from ssh_config
+              else
+                # Load from specified path
+                session.parse_config(config)
+              end
+            end
             session.add_identity('%d/id_ed25519')
 
             session.connect
