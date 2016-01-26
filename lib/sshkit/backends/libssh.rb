@@ -73,23 +73,7 @@ module SSHKit
             if username
               session.user = username
             end
-            if ssh_options[:port]
-              session.port = ssh_options[:port]
-            end
-            ssh_options.fetch(:config, true).tap do |config|
-              case config
-              when true
-                # Load from default ssh_config
-                session.parse_config
-              when false, nil
-                # Don't load from ssh_config
-              else
-                # Load from specified path
-                session.parse_config(config)
-              end
-            end
-            session.add_identity('%d/id_ed25519')
-
+            configure_session(session, ssh_options)
             session.connect
             if session.server_known != LibSSH::SERVER_KNOWN_OK
               raise 'unknown host'
@@ -104,6 +88,33 @@ module SSHKit
           yield entry.connection
         ensure
           self.class.pool.checkin(entry)
+        end
+      end
+
+      def configure_session(session, ssh_options)
+        if ssh_options[:port]
+          session.port = ssh_options[:port]
+        end
+
+        session.add_identity('%d/id_ed25519')
+        keys = Array(ssh_options[:keys])
+        unless keys.empty?
+          keys.each do |key|
+            session.add_identity(key)
+          end
+        end
+
+        ssh_options.fetch(:config, true).tap do |config|
+          case config
+          when true
+            # Load from default ssh_config
+            session.parse_config
+          when false, nil
+            # Don't load from ssh_config
+          else
+            # Load from specified path
+            session.parse_config(config)
+          end
         end
       end
     end
