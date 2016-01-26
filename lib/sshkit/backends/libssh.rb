@@ -16,22 +16,24 @@ module SSHKit
         end
       end
 
+      BUFSIZ = 16384
+      private_constant :BUFSIZ
+
       # @override
       def upload!(local, remote, options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :write, File.dirname(remote))
-          scp.init do
-            scp.push_file(File.basename(remote), File.size(local), File.stat(local).mode & 0xfff)
-            File.open(local) do |f|
-              f.read do |buf|
+          wrap_local_io(local) do |io, mode|
+            scp.init do
+              scp.push_file(File.basename(remote), io.size, mode)
+              info "Uploading #{remote}"
+              while buf = io.read(BUFSIZ)
                 scp.write(buf)
               end
             end
           end
         end
       end
-
-      BUFSIZ = 16384
 
       @pool = SSHKit::Backend::ConnectionPool.new
 
@@ -75,6 +77,17 @@ module SSHKit
 
             cmd.exit_status = channel.get_exit_status
             output.log_command_exit(cmd)
+          end
+        end
+      end
+
+      def wrap_local_io(local)
+        if local.respond_to?(:read)
+          # local is IO-like object
+          yield(local, 0644)
+        else
+          File.open(local, 'rb') do |f|
+            yield(f, File.stat(local).mode & 0xfff)
           end
         end
       end

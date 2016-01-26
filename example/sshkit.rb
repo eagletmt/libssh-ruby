@@ -27,4 +27,5 @@ end
 
 on %w[barkhorn rossmann], in: :parallel do
   upload! __FILE__, '/tmp/sshkit.rb'
+  upload! StringIO.new("libssh\n"), '/tmp/libssh.txt'
 end
