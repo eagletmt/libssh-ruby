@@ -16,6 +16,21 @@ module SSHKit
         end
       end
 
+      # @override
+      def upload!(local, remote, options = {})
+        with_session do |session|
+          scp = LibSSH::Scp.new(session, :write, File.dirname(remote))
+          scp.init do
+            scp.push_file(File.basename(remote), File.size(local), File.stat(local).mode & 0xfff)
+            File.open(local) do |f|
+              f.read do |buf|
+                scp.write(buf)
+              end
+            end
+          end
+        end
+      end
+
       BUFSIZ = 16384
 
       @pool = SSHKit::Backend::ConnectionPool.new
