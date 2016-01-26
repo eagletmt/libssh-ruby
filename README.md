@@ -44,6 +44,9 @@ require 'sshkit/backends/libssh'
 set :sshkit_backend, SSHKit::Backend::Libssh
 ```
 
+## Documentation
+http://www.rubydoc.info/github/eagletmt/libssh-ruby
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
