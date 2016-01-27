@@ -149,6 +149,239 @@ static VALUE m_set_port(VALUE self, VALUE port) {
 }
 
 /*
+ * @overload bindaddr=(addr)
+ *  Set the address to bind the client to.
+ *  @since 0.2.0
+ *  @param [String] addr
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_BINDADDR)
+ */
+static VALUE m_set_bindaddr(VALUE self, VALUE addr) {
+  return set_string_option(self, SSH_OPTIONS_BINDADDR, addr);
+}
+
+/*
+ * @overload knownhosts=(path)
+ *  Set the known hosts file name
+ *  @since 0.2.0
+ *  @param [String] path
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_KNOWNHOSTS)
+ */
+static VALUE m_set_knownhosts(VALUE self, VALUE path) {
+  return set_string_option(self, SSH_OPTIONS_KNOWNHOSTS, path);
+}
+
+static VALUE set_long_option(VALUE self, enum ssh_options_e type, VALUE i) {
+  SessionHolder *holder;
+  long j;
+
+  Check_Type(i, T_FIXNUM);
+  j = FIX2LONG(i);
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  RAISE_IF_ERROR(ssh_options_set(holder->session, type, &j));
+  return Qnil;
+}
+
+/*
+ * @overload timeout=(sec)
+ *  Set a timeout for the connection in seconds
+ *  @since 0.2.0
+ *  @param [Fixnum] sec
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_TIMEOUT)
+ */
+static VALUE m_set_timeout(VALUE self, VALUE sec) {
+  return set_long_option(self, SSH_OPTIONS_TIMEOUT, sec);
+}
+
+/*
+ * @overload timeout_usec=(usec)
+ *  Set a timeout for the connection in micro seconds
+ *  @since 0.2.0
+ *  @param [Fixnum] usec
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_TIMEOUT_USEC)
+ */
+static VALUE m_set_timeout_usec(VALUE self, VALUE usec) {
+  return set_long_option(self, SSH_OPTIONS_TIMEOUT_USEC, usec);
+}
+
+/*
+ * @overload protocol=(protocol)
+ *  Set allowed SSH protocols
+ *  @since 0.2.0
+ *  @param [Array<Integer>] protocol
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_SSH1)
+ */
+static VALUE m_set_protocol(VALUE self, VALUE protocols) {
+  SessionHolder *holder;
+  VALUE protocol;
+  int i, ssh1 = 0, ssh2 = 0;
+
+  Check_Type(protocols, T_ARRAY);
+
+  for (i = 0; i < RARRAY_LEN(protocols); i++) {
+    protocol = rb_ary_entry(protocols, i);
+    Check_Type(protocol, T_FIXNUM);
+    switch (FIX2INT(protocol)) {
+      case 1:
+        ssh1 = 1;
+        break;
+      case 2:
+        ssh2 = 1;
+        break;
+      default:
+        rb_raise(rb_eArgError, "protocol should be 1 or 2");
+    }
+  }
+
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_SSH1, &ssh1));
+  RAISE_IF_ERROR(ssh_options_set(holder->session, SSH_OPTIONS_SSH2, &ssh2));
+
+  return Qnil;
+}
+
+static VALUE set_comma_separated_option(VALUE self, enum ssh_options_e type,
+                                        VALUE ary) {
+  VALUE str;
+
+  Check_Type(ary, T_ARRAY);
+  str = rb_ary_join(ary, rb_str_new_cstr(","));
+
+  return set_string_option(self, type, str);
+}
+
+/*
+ * @overload key_exchange=(methods)
+ *  Set the key exchange method to be used
+ *  @since 0.2.0
+ *  @param [Array<String>] methods
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_KEY_EXCHANGE)
+ */
+static VALUE m_set_key_exchange(VALUE self, VALUE kex) {
+  return set_comma_separated_option(self, SSH_OPTIONS_KEY_EXCHANGE, kex);
+}
+
+/*
+ * @overload hostkeys=(key_types)
+ *  Set the preferred server host key types
+ *  @since 0.2.0
+ *  @param [Array<String>] key_types
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_HOSTKEYS)
+ */
+static VALUE m_set_hostkeys(VALUE self, VALUE hostkeys) {
+  return set_comma_separated_option(self, SSH_OPTIONS_HOSTKEYS, hostkeys);
+}
+
+/*
+ * @overload compression=(algorithm)
+ *  Set the compression to use for both directions communication
+ *  @since 0.2.0
+ *  @param [TrueClass, FalseClass] algorithm
+ *  @param [String] algorithm e.g. "yes", "no", "zlib", "zlib@openssh.com", "none"
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_COMPRESSION)
+ */
+static VALUE m_set_compression(VALUE self, VALUE compression) {
+  SessionHolder *holder;
+  char *val;
+  if (compression == Qtrue || compression == Qfalse) {
+    if (compression == Qtrue) {
+      val = "yes";
+    } else {
+      val = "no";
+    }
+
+    TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+    RAISE_IF_ERROR(
+        ssh_options_set(holder->session, SSH_OPTIONS_COMPRESSION, val));
+
+    return Qnil;
+  } else {
+    return set_string_option(self, SSH_OPTIONS_COMPRESSION, compression);
+  }
+}
+
+/*
+ * @overload compression_level=(level)
+ *  Set the compression level to use for zlib functions
+ *  @since 0.2.0
+ *  @param [Fixnum] level
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_COMPRESSION_LEVEL)
+ */
+static VALUE m_set_compression_level(VALUE self, VALUE level) {
+  return set_int_option(self, SSH_OPTIONS_COMPRESSION_LEVEL, level);
+}
+
+/*
+ * @overload stricthostkeycheck=(enable)
+ *  Set the parameter StrictHostKeyChecking to avoid asking about a fingerprint
+ *  @since 0.2.0
+ *  @param [TrueClass, FalseClass] enable
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_STRICTHOSTKEYCHECK)
+ */
+static VALUE m_set_stricthostkeycheck(VALUE self, VALUE enable) {
+  return set_int_option(self, SSH_OPTIONS_STRICTHOSTKEYCHECK,
+                        INT2FIX(RTEST(enable) ? 1 : 0));
+}
+
+/*
+ * @overload proxycommand=(command)
+ *  Set the command to be executed in order to connect to server
+ *  @since 0.2.0
+ *  @param [String] command
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_PROXYCOMMAND)
+ */
+static VALUE m_set_proxycommand(VALUE self, VALUE proxycommand) {
+  return set_string_option(self, SSH_OPTIONS_PROXYCOMMAND, proxycommand);
+}
+
+/*
+ * @overload gssapi_client_identity=(identity)
+ *  Set the GSSAPI client identity that libssh should expect when connecting to the server
+ *  @since 0.2.0
+ *  @param [String] identity
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY)
+ */
+static VALUE m_set_gssapi_client_identity(VALUE self, VALUE identity) {
+  return set_string_option(self, SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY, identity);
+}
+
+/*
+ * @overload gssapi_server_identity=(identity)
+ *  Set the GSSAPI server identity that libssh should expect when connecting to the server
+ *  @since 0.2.0
+ *  @param [String] identity
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_GSSAPI_SERVER_IDENTITY)
+ */
+static VALUE m_set_gssapi_server_identity(VALUE self, VALUE identity) {
+  return set_string_option(self, SSH_OPTIONS_GSSAPI_SERVER_IDENTITY, identity);
+}
+
+/*
+ * @overload gssapi_delegate_credentials=(enable)
+ *  Set whether GSSAPI should delegate credentials to the server
+ *  @since 0.2.0
+ *  @param [FalseClass, TrueClass] enable
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS)
+ */
+static VALUE m_set_gssapi_delegate_credentials(VALUE self, VALUE enable) {
+  return set_int_option(self, SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS,
+                        INT2FIX(RTEST(enable) ? 1 : 0));
+}
+
+/*
  * @overload parse_config(path = nil)
  *  Parse the ssh_config file.
  *  @since 0.1.0
@@ -380,6 +613,36 @@ void Init_libssh_session() {
   rb_define_method(rb_cLibSSHSession, "host=", RUBY_METHOD_FUNC(m_set_host), 1);
   rb_define_method(rb_cLibSSHSession, "user=", RUBY_METHOD_FUNC(m_set_user), 1);
   rb_define_method(rb_cLibSSHSession, "port=", RUBY_METHOD_FUNC(m_set_port), 1);
+  rb_define_method(rb_cLibSSHSession, "bindaddr=",
+                   RUBY_METHOD_FUNC(m_set_bindaddr), 1);
+  rb_define_method(rb_cLibSSHSession, "knownhosts=",
+                   RUBY_METHOD_FUNC(m_set_knownhosts), 1);
+  rb_define_method(rb_cLibSSHSession, "timeout=",
+                   RUBY_METHOD_FUNC(m_set_timeout), 1);
+  rb_define_method(rb_cLibSSHSession, "timeout_usec=",
+                   RUBY_METHOD_FUNC(m_set_timeout_usec), 1);
+  rb_define_method(rb_cLibSSHSession, "protocol=",
+                   RUBY_METHOD_FUNC(m_set_protocol), 1);
+  rb_define_method(rb_cLibSSHSession, "key_exchange=",
+                   RUBY_METHOD_FUNC(m_set_key_exchange), 1);
+  rb_define_method(rb_cLibSSHSession, "hostkeys=",
+                   RUBY_METHOD_FUNC(m_set_hostkeys), 1);
+  rb_define_method(rb_cLibSSHSession, "compression=",
+                   RUBY_METHOD_FUNC(m_set_compression), 1);
+  rb_define_method(rb_cLibSSHSession, "compression_level=",
+                   RUBY_METHOD_FUNC(m_set_compression_level), 1);
+  rb_define_method(rb_cLibSSHSession, "compression_level=",
+                   RUBY_METHOD_FUNC(m_set_compression_level), 1);
+  rb_define_method(rb_cLibSSHSession, "stricthostkeycheck=",
+                   RUBY_METHOD_FUNC(m_set_stricthostkeycheck), 1);
+  rb_define_method(rb_cLibSSHSession, "proxycommand=",
+                   RUBY_METHOD_FUNC(m_set_proxycommand), 1);
+  rb_define_method(rb_cLibSSHSession, "gssapi_client_identity=",
+                   RUBY_METHOD_FUNC(m_set_gssapi_client_identity), 1);
+  rb_define_method(rb_cLibSSHSession, "gssapi_server_identity=",
+                   RUBY_METHOD_FUNC(m_set_gssapi_server_identity), 1);
+  rb_define_method(rb_cLibSSHSession, "gssapi_delegate_credentials=",
+                   RUBY_METHOD_FUNC(m_set_gssapi_delegate_credentials), 1);
 
   rb_define_method(rb_cLibSSHSession, "parse_config",
                    RUBY_METHOD_FUNC(m_parse_config), -1);
