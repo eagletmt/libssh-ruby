@@ -23,12 +23,32 @@ module SSHKit
       def upload!(local, remote, options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :write, File.dirname(remote))
-          wrap_local_io(local) do |io, mode|
+          wrap_local_reader(local) do |io, mode|
             scp.init do
               scp.push_file(File.basename(remote), io.size, mode)
               info "Uploading #{remote}"
               while buf = io.read(BUFSIZ)
                 scp.write(buf)
+              end
+            end
+          end
+        end
+      end
+
+      # @override
+      def download!(remote, local, options = {})
+        with_session do |session|
+          scp = LibSSH::Scp.new(session, :read, remote)
+          scp.init do
+            loop do
+              case scp.pull_request
+              when LibSSH::Scp::REQUEST_NEWFILE
+                info "Downloading #{remote}"
+                download_file(scp, local)
+              when LibSSH::Scp::REQUEST_NEWDIR
+                scp.deny_request('Only NEWFILE is acceptable')
+              when LibSSH::Scp::REQUEST_EOF
+                break
               end
             end
           end
@@ -81,13 +101,38 @@ module SSHKit
         end
       end
 
-      def wrap_local_io(local)
+      def wrap_local_reader(local)
         if local.respond_to?(:read)
           # local is IO-like object
           yield(local, 0644)
         else
           File.open(local, 'rb') do |f|
             yield(f, File.stat(local).mode & 0xfff)
+          end
+        end
+      end
+
+      def wrap_local_writer(local, mode)
+        if local.respond_to?(:write)
+          # local is IO-like object
+          yield(local)
+        else
+          File.open(local, 'wb', mode) do |f|
+            yield(f)
+          end
+        end
+      end
+
+      def download_file(scp, local)
+        size = scp.request_size
+        mode = scp.request_permissions
+        scp.accept_request
+        wrap_local_writer(local, mode) do |io|
+          n = 0
+          while n < size
+            buf = scp.read(size - n)
+            io.write(buf)
+            n += buf.size
           end
         end
       end

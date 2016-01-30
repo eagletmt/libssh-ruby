@@ -25,7 +25,9 @@ on %w[barkhorn rossmann], in: :parallel do
   execute :false, raise_on_non_zero_exit: false
 end
 
-on %w[barkhorn rossmann], in: :parallel do
+on %w[barkhorn rossmann], in: :parallel do |host|
   upload! __FILE__, '/tmp/sshkit.rb'
   upload! StringIO.new("libssh\n"), '/tmp/libssh.txt'
+
+  download! '/etc/passwd', "/tmp/#{host}-passwd"
 end

@@ -163,7 +163,7 @@ static void *nogvl_push_file(void *ptr) {
  *  @param [Fixnum] mode The UNIX permissions for the new file.
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
- * ssh_scp_push_file64
+ *    ssh_scp_push_file64
  */
 static VALUE m_push_file(VALUE self, VALUE filename, VALUE size, VALUE mode) {
   ScpHolder *holder;
@@ -213,9 +213,220 @@ static VALUE m_write(VALUE self, VALUE data) {
   return Qnil;
 }
 
+static void *nogvl_pull_request(void *ptr) {
+  struct nogvl_scp_args *args = ptr;
+  args->rc = ssh_scp_pull_request(args->scp);
+  return NULL;
+}
+
+/* @overload pull_request
+ *  Wait for a scp request.
+ *  @since 0.2.0
+ *  @return [Fixnum]
+ *    REQUEST_NEWFILE: The other side is sending a file.
+ *    REQUEST_NEWDIR: The other side is sending a directory.
+ *    REQUEST_ENDDIR: The other side has finished with the current directory.
+ *    REQUEST_WARNING: The other side sent us a warning.
+ *    REQUEST_EOF: The other side finished sending us files and data.
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_pull_request
+ */
+static VALUE m_pull_request(VALUE self) {
+  ScpHolder *holder;
+  struct nogvl_scp_args args;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  args.scp = holder->scp;
+  rb_thread_call_without_gvl(nogvl_pull_request, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return INT2FIX(args.rc);
+}
+
+/* @overload request_size
+ *  Get the size of the file being pushed from the other party.
+ *  @since 0.2.0
+ *  @return [Integer] The numeric size of the file being read.
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_request_get_size64
+ */
+static VALUE m_request_size(VALUE self) {
+  ScpHolder *holder;
+  uint64_t size;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  size = ssh_scp_request_get_size64(holder->scp);
+  return ULL2NUM(size);
+}
+
+/* @overload request_filename
+ *  Get the name of the directory or file being pushed from the other party.
+ *  @since 0.2.0
+ *  @return [String, nil] The filename. +nil+ on error.
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_request_get_filename
+ */
+static VALUE m_request_filename(VALUE self) {
+  ScpHolder *holder;
+  const char *filename;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  filename = ssh_scp_request_get_filename(holder->scp);
+  if (filename == NULL) {
+    return Qnil;
+  } else {
+    return rb_str_new_cstr(filename);
+  }
+}
+
+/* @overload request_permissions
+ *  Get the permissions of the directory or file being pushed from the other
+ *  party.
+ *  @since 0.2.0
+ *  @return [Fixnum] The UNIX permissions.
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_request_get_permissions
+ */
+static VALUE m_request_permissions(VALUE self) {
+  ScpHolder *holder;
+  int mode;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  mode = ssh_scp_request_get_permissions(holder->scp);
+  RAISE_IF_ERROR(mode);
+  return INT2FIX(mode);
+}
+
+static void *nogvl_accept_request(void *ptr) {
+  struct nogvl_scp_args *args = ptr;
+  args->rc = ssh_scp_accept_request(args->scp);
+  return NULL;
+}
+
+/* @overload accept_request
+ *  Accepts transfer of a file or creation of a directory coming from the remote
+ *  party.
+ *  @since 0.2.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_accept_request
+ */
+static VALUE m_accept_request(VALUE self) {
+  ScpHolder *holder;
+  struct nogvl_scp_args args;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  args.scp = holder->scp;
+  rb_thread_call_without_gvl(nogvl_accept_request, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return Qnil;
+}
+
+struct nogvl_deny_request_args {
+  ssh_scp scp;
+  const char *reason;
+  int rc;
+};
+
+static void *nogvl_deny_request(void *ptr) {
+  struct nogvl_deny_request_args *args = ptr;
+  args->rc = ssh_scp_deny_request(args->scp, args->reason);
+  return NULL;
+}
+
+/* @overload deny_request
+ *  Deny the transfer of a file or creation of a directory coming from the
+ *  remote party.
+ *  @since 0.2.0
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_deny_request
+ */
+static VALUE m_deny_request(VALUE self, VALUE reason) {
+  ScpHolder *holder;
+  struct nogvl_deny_request_args args;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  args.scp = holder->scp;
+  args.reason = StringValueCStr(reason);
+  rb_thread_call_without_gvl(nogvl_deny_request, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+  return Qnil;
+}
+
+struct nogvl_read_args {
+  ssh_scp scp;
+  void *buffer;
+  size_t size;
+  int rc;
+};
+
+static void *nogvl_read(void *ptr) {
+  struct nogvl_read_args *args = ptr;
+  args->rc = ssh_scp_read(args->scp, args->buffer, args->size);
+  return NULL;
+}
+
+/* @overload read(size)
+ *  Read from a remote scp file.
+ *  @since 0.2.0
+ *  @param [Fixnum] The size of the buffer.
+ *  @return [String]
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html ssh_scp_read
+ */
+static VALUE m_read(VALUE self, VALUE size) {
+  ScpHolder *holder;
+  struct nogvl_read_args args;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  Check_Type(size, T_FIXNUM);
+  args.scp = holder->scp;
+  args.size = FIX2INT(size);
+  args.buffer = ALLOC_N(char, args.size);
+  rb_thread_call_without_gvl(nogvl_read, &args, RUBY_UBF_IO, NULL);
+  if (args.rc == SSH_ERROR) {
+    ruby_xfree(args.buffer);
+    RAISE_IF_ERROR(args.rc);
+    return Qnil; /* unreachable */
+  } else {
+    VALUE ret = rb_utf8_str_new(args.buffer, args.rc);
+    ruby_xfree(args.buffer);
+    return ret;
+  }
+}
+
+/* @overload request_warning
+ *  Get the warning string.
+ *  @since 0.2.0
+ *  @return [String, nil] A warning string. +nil+ on error.
+ *  @see http://api.libssh.org/stable/group__libssh__scp.html
+ *    ssh_scp_request_get_warning
+ */
+static VALUE m_request_warning(VALUE self) {
+  ScpHolder *holder;
+  const char *warning;
+
+  TypedData_Get_Struct(self, ScpHolder, &scp_type, holder);
+  warning = ssh_scp_request_get_warning(holder->scp);
+  if (warning == NULL) {
+    return Qnil;
+  } else {
+    return rb_str_new_cstr(warning);
+  }
+}
+
 void Init_libssh_scp(void) {
   rb_cLibSSHScp = rb_define_class_under(rb_mLibSSH, "Scp", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHScp, scp_alloc);
+
+  rb_define_const(rb_cLibSSHScp, "REQUEST_NEWFILE",
+                  INT2FIX(SSH_SCP_REQUEST_NEWFILE));
+  rb_define_const(rb_cLibSSHScp, "REQUEST_NEWDIR",
+                  INT2FIX(SSH_SCP_REQUEST_NEWDIR));
+  rb_define_const(rb_cLibSSHScp, "REQUEST_ENDDIR",
+                  INT2FIX(SSH_SCP_REQUEST_ENDDIR));
+  rb_define_const(rb_cLibSSHScp, "REQUEST_WARNING",
+                  INT2FIX(SSH_SCP_REQUEST_WARNING));
+  rb_define_const(rb_cLibSSHScp, "REQUEST_EOF", INT2FIX(SSH_SCP_REQUEST_EOF));
 
   rb_define_method(rb_cLibSSHScp, "initialize", RUBY_METHOD_FUNC(m_initialize),
                    3);
@@ -224,6 +435,22 @@ void Init_libssh_scp(void) {
   rb_define_method(rb_cLibSSHScp, "push_file", RUBY_METHOD_FUNC(m_push_file),
                    3);
   rb_define_method(rb_cLibSSHScp, "write", RUBY_METHOD_FUNC(m_write), 1);
+
+  rb_define_method(rb_cLibSSHScp, "pull_request",
+                   RUBY_METHOD_FUNC(m_pull_request), 0);
+  rb_define_method(rb_cLibSSHScp, "request_size",
+                   RUBY_METHOD_FUNC(m_request_size), 0);
+  rb_define_method(rb_cLibSSHScp, "request_filename",
+                   RUBY_METHOD_FUNC(m_request_filename), 0);
+  rb_define_method(rb_cLibSSHScp, "request_permissions",
+                   RUBY_METHOD_FUNC(m_request_permissions), 0);
+  rb_define_method(rb_cLibSSHScp, "accept_request",
+                   RUBY_METHOD_FUNC(m_accept_request), 0);
+  rb_define_method(rb_cLibSSHScp, "deny_request",
+                   RUBY_METHOD_FUNC(m_deny_request), 1);
+  rb_define_method(rb_cLibSSHScp, "read", RUBY_METHOD_FUNC(m_read), 1);
+  rb_define_method(rb_cLibSSHScp, "request_warning",
+                   RUBY_METHOD_FUNC(m_request_warning), 0);
 
   id_read = rb_intern("read");
   id_write = rb_intern("write");
