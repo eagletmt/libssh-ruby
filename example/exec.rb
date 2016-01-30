@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'libssh'
+require 'io/wait'
 
 GC.stress = true
 puts "libssh #{LibSSH::LIBSSH_VERSION}"
@@ -42,7 +43,7 @@ io = IO.for_fd(session.fd, autoclose: false)
 channel.open_session do
   channel.request_exec('ps auxf')
   until channel.eof?
-    IO.select([io])
+    io.wait_readable
 
     loop do
       out = channel.read_nonblocking(bufsiz)

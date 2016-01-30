@@ -1,4 +1,5 @@
 require 'libssh'
+require 'io/wait'
 require 'sshkit/backends/abstract'
 require 'sshkit/backends/connection_pool'
 
@@ -116,7 +117,7 @@ module SSHKit
             end
             channel.request_exec(cmd.to_command)
             until channel.eof?
-              IO.select([io])
+              io.wait_readable
 
               loop do
                 buf = channel.read_nonblocking(BUFSIZ)
