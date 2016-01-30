@@ -476,6 +476,19 @@ static VALUE m_server_known(VALUE self) {
 }
 
 /*
+ * @overload fd
+ * Get the fd of a connection
+ * @return [Fixnum]
+ * @since 0.3.0
+ * @see http://api.libssh.org/stable/group__libssh__session.html ssh_get_fd
+ */
+static VALUE m_fd(VALUE self) {
+  SessionHolder *holder;
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  return INT2FIX(ssh_get_fd(holder->session));
+}
+
+/*
  * @overload userauth_none
  *  Try to authenticate through then "none" method.
  *  @return [Fixnum]
@@ -655,6 +668,8 @@ void Init_libssh_session() {
                    0);
   rb_define_method(rb_cLibSSHSession, "server_known",
                    RUBY_METHOD_FUNC(m_server_known), 0);
+  rb_define_method(rb_cLibSSHSession, "fd", RUBY_METHOD_FUNC(m_fd), 0);
+
   rb_define_method(rb_cLibSSHSession, "userauth_none",
                    RUBY_METHOD_FUNC(m_userauth_none), 0);
   rb_define_method(rb_cLibSSHSession, "userauth_list",
