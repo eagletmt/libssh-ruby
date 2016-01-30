@@ -20,14 +20,14 @@ module SSHKit
       private_constant :BUFSIZ
 
       # @override
-      def upload!(local, remote, options = {})
+      def upload!(local, remote, _options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :write, File.dirname(remote))
           wrap_local_reader(local) do |io, mode|
             scp.init do
               scp.push_file(File.basename(remote), io.size, mode)
               info "Uploading #{remote}"
-              while buf = io.read(BUFSIZ)
+              while (buf = io.read(BUFSIZ))
                 scp.write(buf)
               end
             end
@@ -36,7 +36,7 @@ module SSHKit
       end
 
       # @override
-      def download!(remote, local, options = {})
+      def download!(remote, local, _options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :read, remote)
           scp.init do

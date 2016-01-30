@@ -29,7 +29,7 @@ scp.init do
       scp.accept_request
 
       n = 0
-      buf = String.new
+      buf = ''
       while n < size
         s = scp.read(size)
         puts "Read #{s.size}"
