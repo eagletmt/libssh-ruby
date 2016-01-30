@@ -251,6 +251,59 @@ static VALUE m_read(int argc, VALUE *argv, VALUE self) {
   return ret;
 }
 
+struct nogvl_read_nonblocking_args {
+  ssh_channel channel;
+  char *buf;
+  uint32_t count;
+  int is_stderr;
+  int rc;
+};
+
+static void *nogvl_read_nonblocking(void *ptr) {
+  struct nogvl_read_nonblocking_args *args = ptr;
+  args->rc = ssh_channel_read_nonblocking(args->channel, args->buf, args->count,
+                                          args->is_stderr);
+  return NULL;
+}
+
+/*
+ * @overload read_nonblocking(count, is_stderr = false)
+ *  Do a nonblocking read on the channel.
+ *  @param [Fixnum] count The count of bytes to be read.
+ *  @param [Boolean] is_stderr Read from the stderr flow or not.
+ *  @return [String, nil] Data read from the channel. +nil+ on EOF.
+ *  @since 0.3.0
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_read_nonblocking
+ */
+static VALUE m_read_nonblocking(int argc, VALUE *argv, VALUE self) {
+  ChannelHolder *holder;
+  VALUE count, is_stderr;
+  struct nogvl_read_nonblocking_args args;
+  VALUE ret;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.channel = holder->channel;
+  rb_scan_args(argc, argv, "11", &count, &is_stderr);
+  Check_Type(count, T_FIXNUM);
+  args.count = FIX2UINT(count);
+  if (is_stderr == Qundef) {
+    args.is_stderr = 0;
+  } else {
+    args.is_stderr = RTEST(is_stderr) ? 1 : 0;
+  }
+  args.buf = ALLOC_N(char, args.count);
+  rb_thread_call_without_gvl(nogvl_read_nonblocking, &args, RUBY_UBF_IO, NULL);
+
+  if (args.rc == SSH_EOF) {
+    ret = Qnil;
+  } else {
+    ret = rb_utf8_str_new(args.buf, args.rc);
+  }
+  ruby_xfree(args.buf);
+  return ret;
+}
+
 /*
  * @overload eof?
  *  Check if remote ha sent an EOF.
@@ -432,6 +485,8 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "request_pty",
                    RUBY_METHOD_FUNC(m_request_pty), 0);
   rb_define_method(rb_cLibSSHChannel, "read", RUBY_METHOD_FUNC(m_read), -1);
+  rb_define_method(rb_cLibSSHChannel, "read_nonblocking",
+                   RUBY_METHOD_FUNC(m_read_nonblocking), -1);
   rb_define_method(rb_cLibSSHChannel, "poll", RUBY_METHOD_FUNC(m_poll), -1);
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
   rb_define_method(rb_cLibSSHChannel, "get_exit_status",
