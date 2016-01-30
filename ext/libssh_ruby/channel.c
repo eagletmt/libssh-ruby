@@ -57,6 +57,12 @@ static size_t channel_memsize(RB_UNUSED_VAR(const void *arg)) {
   return sizeof(ChannelHolder);
 }
 
+/* @overload initialize(session)
+ *  Initialize a channel from the session.
+ *  @param [Session] session
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_new
+ */
 static VALUE m_initialize(VALUE self, VALUE session) {
   ChannelHolder *holder;
   SessionHolder *session_holder;
@@ -83,7 +89,6 @@ static void *nogvl_close(void *ptr) {
 /*
  * @overload close
  *  Close a channel.
- *  @since 0.1.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_close
@@ -109,7 +114,6 @@ static void *nogvl_open_session(void *ptr) {
 /*
  * @overload open_session
  *  Open a session channel, and close it after the block.
- *  @since 0.1.0
  *  @yieldparam [Channel] channel self
  *  @return [Object] Return value of the block
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
@@ -147,7 +151,6 @@ static void *nogvl_request_exec(void *ptr) {
 /*
  * @overload request_exec(cmd)
  *  Run a shell command without an interactive shell.
- *  @since 0.1.0
  *  @param [String] cmd The command to execute
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
@@ -174,7 +177,6 @@ static void *nogvl_request_pty(void *ptr) {
 /*
  * @overload request_pty
  *  Request a PTY.
- *  @since 0.1.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_request_pty
@@ -209,7 +211,6 @@ static void *nogvl_read(void *ptr) {
 /*
  * @overload read(count, is_stderr: false, timeout: -1)
  *  Read data from a channel.
- *  @since 0.1.0
  *  @param [Fixnum] count The count of bytes to be read.
  *  @param [Boolean] is_stderr Read from the stderr flow or not.
  *  @param [Fixnum] timeout A timeout in seconds. +-1+ means infinite timeout.
@@ -253,7 +254,6 @@ static VALUE m_read(int argc, VALUE *argv, VALUE self) {
 /*
  * @overload eof?
  *  Check if remote ha sent an EOF.
- *  @since 0.1.0
  *  @return [Boolean]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_is_eof
@@ -282,7 +282,6 @@ static void *nogvl_poll(void *ptr) {
 /*
  * @overload poll(is_stderr: false, timeout: -1)
  *  Poll a channel for data to read.
- *  @since 0.1.0
  *  @param [Boolean] is_stderr A boolean to select the stderr stream.
  *  @param [Fixnum] timeout A timeout in milliseconds. A negative value means an
  *    infinite timeout.
@@ -333,7 +332,6 @@ static void *nogvl_get_exit_status(void *ptr) {
 /*
  * @overload get_exit_status
  *  Get the exit status of the channel.
- *  @since 0.1.0
  *  @return [Fixnum, nil] The exit status. +nil+ if no exit status has been
  *    returned.
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
@@ -369,7 +367,6 @@ static void *nogvl_write(void *ptr) {
 /*
  * @overload write(data)
  *  Write data on the channel.
- *  @since 0.1.0
  *  @param [String] data Data to write.
  *  @return [Fixnum] The number of bytes written.
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
@@ -398,7 +395,6 @@ static void *nogvl_send_eof(void *ptr) {
 /*
  * @overload send_eof
  *  Send EOF on the channel.
- *  @since 0.1.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_send_eof
@@ -413,6 +409,14 @@ static VALUE m_send_eof(VALUE self) {
   RAISE_IF_ERROR(args.rc);
   return Qnil;
 }
+
+/*
+ * Document-class: LibSSH::Channel
+ * Wrapper for ssh_channel struct in libssh.
+ *
+ * @since 0.1.0
+ * @see http://api.libssh.org/stable/group__libssh__channel.html
+ */
 
 void Init_libssh_channel(void) {
   rb_cLibSSHChannel = rb_define_class_under(rb_mLibSSH, "Channel", rb_cObject);

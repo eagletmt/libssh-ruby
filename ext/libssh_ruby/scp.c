@@ -54,7 +54,6 @@ static size_t scp_memsize(RB_UNUSED_VAR(const void *arg)) {
 
 /* @overload initialize(session, mode, path)
  *  Create a new scp session.
- *  @since 0.2.0
  *  @param [Session] session The SSH session to use.
  *  @param [Symbol] mode +:read+ or +:write+.
  *  @param [String] path The directory in which write or read will be done.
@@ -99,7 +98,6 @@ static void *nogvl_close(void *ptr) {
 
 /* @overload close
  *  Close the scp channel.
- *  @since 0.2.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html ssh_scp_close
  */
@@ -123,7 +121,6 @@ static void *nogvl_init(void *ptr) {
 
 /* @overload init
  *  Initialize the scp channel.
- *  @since 0.2.0
  *  @yieldparam [Scp] scp self
  *  @return [Object] Return value of the block
  *  @see http://api.libssh.org/stable/group__libssh__scp.html ssh_scp_init
@@ -157,7 +154,6 @@ static void *nogvl_push_file(void *ptr) {
 
 /* @overload push_file(filename, size, mode)
  *  Initialize the sending of a file to a scp in sink mode.
- *  @since 0.2.0
  *  @param [String] filename The name of the file being sent.
  *  @param [Integer] size Exact size in bytes of the file being sent.
  *  @param [Fixnum] mode The UNIX permissions for the new file.
@@ -194,7 +190,6 @@ static void *nogvl_write(void *ptr) {
 
 /* @overload write(data)
  *  Write into a remote scp file.
- *  @since 0.2.0
  *  @param [String] data The data to write.
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html ssh_scp_write
@@ -221,7 +216,6 @@ static void *nogvl_pull_request(void *ptr) {
 
 /* @overload pull_request
  *  Wait for a scp request.
- *  @since 0.2.0
  *  @return [Fixnum]
  *    REQUEST_NEWFILE: The other side is sending a file.
  *    REQUEST_NEWDIR: The other side is sending a directory.
@@ -244,7 +238,6 @@ static VALUE m_pull_request(VALUE self) {
 
 /* @overload request_size
  *  Get the size of the file being pushed from the other party.
- *  @since 0.2.0
  *  @return [Integer] The numeric size of the file being read.
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_request_get_size64
@@ -260,7 +253,6 @@ static VALUE m_request_size(VALUE self) {
 
 /* @overload request_filename
  *  Get the name of the directory or file being pushed from the other party.
- *  @since 0.2.0
  *  @return [String, nil] The filename. +nil+ on error.
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_request_get_filename
@@ -281,7 +273,6 @@ static VALUE m_request_filename(VALUE self) {
 /* @overload request_permissions
  *  Get the permissions of the directory or file being pushed from the other
  *  party.
- *  @since 0.2.0
  *  @return [Fixnum] The UNIX permissions.
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_request_get_permissions
@@ -305,7 +296,6 @@ static void *nogvl_accept_request(void *ptr) {
 /* @overload accept_request
  *  Accepts transfer of a file or creation of a directory coming from the remote
  *  party.
- *  @since 0.2.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_accept_request
@@ -336,7 +326,6 @@ static void *nogvl_deny_request(void *ptr) {
 /* @overload deny_request
  *  Deny the transfer of a file or creation of a directory coming from the
  *  remote party.
- *  @since 0.2.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_deny_request
@@ -368,7 +357,6 @@ static void *nogvl_read(void *ptr) {
 
 /* @overload read(size)
  *  Read from a remote scp file.
- *  @since 0.2.0
  *  @param [Fixnum] The size of the buffer.
  *  @return [String]
  *  @see http://api.libssh.org/stable/group__libssh__scp.html ssh_scp_read
@@ -396,7 +384,6 @@ static VALUE m_read(VALUE self, VALUE size) {
 
 /* @overload request_warning
  *  Get the warning string.
- *  @since 0.2.0
  *  @return [String, nil] A warning string. +nil+ on error.
  *  @see http://api.libssh.org/stable/group__libssh__scp.html
  *    ssh_scp_request_get_warning
@@ -414,18 +401,30 @@ static VALUE m_request_warning(VALUE self) {
   }
 }
 
+/* Document-class: LibSSH::Scp
+ * Wrapper for ssh_scp struct in libssh.
+ *
+ * @since 0.2.0
+ * @see http://api.libssh.org/stable/group__libssh__scp.html
+ */
+
 void Init_libssh_scp(void) {
   rb_cLibSSHScp = rb_define_class_under(rb_mLibSSH, "Scp", rb_cObject);
   rb_define_alloc_func(rb_cLibSSHScp, scp_alloc);
 
+  /* @see #pull_request */
   rb_define_const(rb_cLibSSHScp, "REQUEST_NEWFILE",
                   INT2FIX(SSH_SCP_REQUEST_NEWFILE));
+  /* @see #pull_request */
   rb_define_const(rb_cLibSSHScp, "REQUEST_NEWDIR",
                   INT2FIX(SSH_SCP_REQUEST_NEWDIR));
+  /* @see #pull_request */
   rb_define_const(rb_cLibSSHScp, "REQUEST_ENDDIR",
                   INT2FIX(SSH_SCP_REQUEST_ENDDIR));
+  /* @see #pull_request */
   rb_define_const(rb_cLibSSHScp, "REQUEST_WARNING",
                   INT2FIX(SSH_SCP_REQUEST_WARNING));
+  /* @see #pull_request */
   rb_define_const(rb_cLibSSHScp, "REQUEST_EOF", INT2FIX(SSH_SCP_REQUEST_EOF));
 
   rb_define_method(rb_cLibSSHScp, "initialize", RUBY_METHOD_FUNC(m_initialize),

@@ -3,6 +3,18 @@
 VALUE rb_eLibSSHError;
 ID id_code;
 
+/*
+ * Document-class: LibSSH::Error
+ * Error returned from libssh.
+ *
+ * @since 0.1.0
+ * @see http://api.libssh.org/stable/group__libssh__error.html
+ *
+ * @!attribute [r] code
+ *  Error code returned from libssh.
+ *  @return [Fixnum]
+ */
+
 void Init_libssh_error(void) {
   rb_eLibSSHError =
       rb_define_class_under(rb_mLibSSH, "Error", rb_eStandardError);

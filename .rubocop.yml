@@ -3,6 +3,10 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   DisplayCopNames: true
 
+Style/Documentation:
+  Exclude:
+    - 'lib/libssh/key.rb' # Documented in ext
+
 Metrics/AbcSize:
   Enabled: false
 Metrics/ClassLength:

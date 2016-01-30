@@ -49,6 +49,11 @@ static size_t session_memsize(RB_UNUSED_VAR(const void *arg)) {
   return sizeof(SessionHolder);
 }
 
+/*
+ * @overload initialize
+ * Create a new SSH session.
+ * @see http://api.libssh.org/stable/group__libssh__session.html ssh_new
+ */
 static VALUE m_initialize(VALUE self) {
   SessionHolder *holder;
 
@@ -60,10 +65,10 @@ static VALUE m_initialize(VALUE self) {
 /*
  * @overload log_verbosity=(verbosity)
  *  Set the session logging verbosity.
- *  @since 0.1.0
  *  @param [Symbol] verbosity +:none+, +:warn+, +:info+, +:debug+, or +:trace+.
  *  @return [nil]
- *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_LOG_VERBOSITY)
+ *  @see http://api.libssh.org/stable/group__libssh__session.html
+ *    ssh_options_set(SSH_OPTIONS_LOG_VERBOSITY)
  */
 static VALUE m_set_log_verbosity(VALUE self, VALUE verbosity) {
   ID id_verbosity;
@@ -104,7 +109,6 @@ static VALUE set_string_option(VALUE self, enum ssh_options_e type, VALUE str) {
 /*
  * @overload host=(host)
  *  Set the hostname or IP address to connect to.
- *  @since 0.1.0
  *  @param [String] host
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_HOST)
@@ -384,7 +388,6 @@ static VALUE m_set_gssapi_delegate_credentials(VALUE self, VALUE enable) {
 /*
  * @overload parse_config(path = nil)
  *  Parse the ssh_config file.
- *  @since 0.1.0
  *  @param [String, nil] Path to ssh_config. If +nil+, the default ~/.ssh/config will be used.
  *  @return [Boolean] Parsing the ssh_config was successful or not.
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_parse_config
@@ -413,7 +416,6 @@ static VALUE m_parse_config(int argc, VALUE *argv, VALUE self) {
 /*
  * @overload add_identity(path_format)
  *  Add the identity file name format.
- *  @since 0.1.0
  *  @param [String] path_format Format string for identity file.
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_options_set(SSH_OPTIONS_ADD_IDENTITY)
@@ -442,7 +444,6 @@ static void *nogvl_connect(void *ptr) {
 /*
  * @overload connect
  *  Connect to the SSH server.
- *  @since 0.1.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_connect
  */
@@ -461,7 +462,6 @@ static VALUE m_connect(VALUE self) {
 /*
  * @overload server_known
  *  Check if the server is knonw.
- *  @since 0.1.0
  *  @return [Fixnum]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_is_server_known
  */
@@ -478,7 +478,6 @@ static VALUE m_server_known(VALUE self) {
 /*
  * @overload userauth_none
  *  Try to authenticate through then "none" method.
- *  @since 0.1.0
  *  @return [Fixnum]
  *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_none
  */
@@ -495,7 +494,6 @@ static VALUE m_userauth_none(VALUE self) {
 /*
  * @overload userauth_list
  *  Get available authentication methods from the server.
- *  @since 0.1.0
  *  @return [Array<Symbol>]
  *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_list
  */
@@ -539,7 +537,6 @@ static void *nogvl_userauth_publickey_auto(void *ptr) {
 /*
  * @overload userauth_publickey_auto
  *  Try to automatically authenticate with public key and "none".
- *  @since 0.1.0
  *  @return [Fixnum]
  *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_publickey_auto
  */
@@ -557,7 +554,6 @@ static VALUE m_userauth_publickey_auto(VALUE self) {
 /*
  * @overload get_publickey
  *  Get the server public key from a session.
- *  @since 0.1.0
  *  @return [Key]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_get_publickey
  */
@@ -576,7 +572,6 @@ static VALUE m_get_publickey(VALUE self) {
 /*
  * @overload write_knownhost
  *  Write the current server as known in the known_hosts file.
- *  @since 0.1.0
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_write_knownhost
  */
@@ -587,6 +582,14 @@ static VALUE m_write_knownhost(VALUE self) {
   RAISE_IF_ERROR(ssh_write_knownhost(holder->session));
   return Qnil;
 }
+
+/*
+ * Document-class: LibSSH::Session
+ * Wrapper for ssh_session struct in libssh.
+ *
+ * @since 0.1.0
+ * @see http://api.libssh.org/stable/group__libssh__session.html
+ */
 
 void Init_libssh_session() {
   rb_cLibSSHSession = rb_define_class_under(rb_mLibSSH, "Session", rb_cObject);

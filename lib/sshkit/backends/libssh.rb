@@ -2,10 +2,29 @@ require 'libssh'
 require 'sshkit/backends/abstract'
 require 'sshkit/backends/connection_pool'
 
+# Namespace of sshkit gem.
 module SSHKit
+  # Namespace of sshkit gem.
   module Backend
+    # SSHKit backend class for libssh.
+    # @since 0.1.0
+    # @see https://github.com/capistrano/sshkit
     class Libssh < Abstract
+      # Configuration class compatible with
+      # {SSHKit::Backend::Netssh::Configuration}.
+      # @since 0.1.0
       class Configuration
+        # @!attribute [rw] pty
+        #   Allocate a PTY or not. Default is +false+.
+        #   @return [Boolean]
+        # @!attribute [rw] connection_timeout
+        #   Connection timeout in second. Default is +30+.
+        #   @return [Fixnum]
+        # @!attribute [rw] ssh_options
+        #   Various options for libssh. Some of them are compatible with
+        #   {SSHKit::Backend::Netssh::Configuration#ssh_options}.
+        #   @todo Describe supported options.
+        #   @return [Hash]
         attr_accessor :pty, :connection_timeout, :ssh_options
 
         def initialize
@@ -19,7 +38,13 @@ module SSHKit
       BUFSIZ = 16384
       private_constant :BUFSIZ
 
-      # @override
+      # Upload a local file to the remote party.
+      # @param [String, #read] local Path to the local file to be uploaded.
+      #   If +local+ responds to +#read+, +local+ is treated as IO-like object.
+      # @param [String] remote Path to the remote file.
+      # @since 0.2.0
+      # @see SSHKit::Backend::Abstract#upload!.
+      # @todo Make +options+ compatible with {SSHKit::Backend::Netssh#upload!}.
       def upload!(local, remote, _options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :write, File.dirname(remote))
@@ -35,7 +60,13 @@ module SSHKit
         end
       end
 
-      # @override
+      # Download a remote file to local.
+      # @param [String] remote Path to the remote file to be downloaded.
+      # @param [String, #write] local Path to the local file.
+      #   If +local+ responds to +#write+, +local+ is treated as IO-like object.
+      # @since 0.2.0
+      # @see SSHKit::Backend::Abstract#download!.
+      # @todo Make +options+ compatible with {SSHKit::Backend::Netssh#download!}.
       def download!(remote, local, _options = {})
         with_session do |session|
           scp = LibSSH::Scp.new(session, :read, remote)
@@ -58,9 +89,13 @@ module SSHKit
       @pool = SSHKit::Backend::ConnectionPool.new
 
       class << self
+        # @!attribute [rw] pool
+        #   Connection pool for libssh.
+        #   @return [SSHKit::Backend::ConnectionPool]
         attr_accessor :pool
 
-        # @override
+        # Global configuration for {SSHKit::Backend::Netssh}.
+        # @return [Configuration]
         def config
           @config ||= Configuration.new
         end

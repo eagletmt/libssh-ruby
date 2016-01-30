@@ -28,6 +28,11 @@ static size_t key_memsize(RB_UNUSED_VAR(const void *arg)) {
   return sizeof(KeyHolder);
 }
 
+/*
+ * @overload initialize
+ *  Initialize an empty key.
+ *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_new
+ */
 static VALUE m_initialize(VALUE self) {
   KeyHolder *holder;
   TypedData_Get_Struct(self, KeyHolder, &key_type, holder);
@@ -44,7 +49,6 @@ KeyHolder *libssh_ruby_key_holder(VALUE key) {
 /*
  * @overload sha1
  *  Return the hash in SHA1 form.
- *  @since 0.1.0
  *  @return [String]
  *  @see http://api.libssh.org/stable/group__libssh__pki.html
  */
@@ -65,7 +69,6 @@ static VALUE m_sha1(VALUE self) {
 /*
  * @overload type
  *  Return the type of a SSH key.
- *  @since 0.1.0
  *  @return [Fixnum]
  *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_type
  */
@@ -76,7 +79,6 @@ static VALUE m_type(VALUE self) {
 /*
  * @overload type_str
  *  Return the type of a SSH key in string format.
- *  @since 0.1.0
  *  @return [String]
  *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_type and
  *    ssh_key_type_to_char
@@ -89,7 +91,6 @@ static VALUE m_type_str(VALUE self) {
 /*
  * @overload public?
  *  Check if the key is a public key.
- *  @since 0.1.0
  *  @return [Boolean]
  *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_is_public
  */
@@ -100,13 +101,20 @@ static VALUE m_public_p(VALUE self) {
 /*
  * @overload private?
  *  Check if the key is a private key.
- *  @since 0.1.0
  *  @return [Boolean]
  *  @see http://api.libssh.org/stable/group__libssh__pki.html ssh_key_is_private
  */
 static VALUE m_private_p(VALUE self) {
   return ssh_key_is_private(libssh_ruby_key_holder(self)->key) ? Qtrue : Qfalse;
 }
+
+/*
+ * Document-class: LibSSH::Key
+ * Wrapper for ssh_key struct in libssh.
+ *
+ * @since 0.1.0
+ * @see http://api.libssh.org/stable/group__libssh__pki.html
+ */
 
 void Init_libssh_key(void) {
   rb_cLibSSHKey = rb_define_class_under(rb_mLibSSH, "Key", rb_cObject);
