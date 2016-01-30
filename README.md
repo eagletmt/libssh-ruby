@@ -31,7 +31,7 @@ Or install it yourself as:
 
 ## Usage
 
-See [example/exec.rb](example/exec.rb) and [example/write.rb](example/write.rb).
+See [example](example) directory.
 
 ### With SSHKit
 
