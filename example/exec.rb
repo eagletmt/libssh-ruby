@@ -38,17 +38,28 @@ end
 bufsiz = 16384
 
 channel = LibSSH::Channel.new(session)
+io = IO.for_fd(session.fd, autoclose: false)
 channel.open_session do
   channel.request_exec('ps auxf')
   until channel.eof?
-    stdout_avail = channel.poll(timeout: 1)
-    if stdout_avail && stdout_avail > 0
-      $stdout.write(channel.read(bufsiz))
+    IO.select([io])
+
+    loop do
+      out = channel.read_nonblocking(bufsiz)
+      if out && !out.empty?
+        $stdout.write(out)
+      else
+        break
+      end
     end
 
-    stderr_avail = channel.poll(stderr: true, timeout: 1)
-    if stderr_avail && stderr_avail > 0
-      $stderr.write(channel.read(bufsiz, stderr: true))
+    loop do
+      err = channel.read_nonblocking(bufsiz, true)
+      if err && !err.empty?
+        $stderr.write(err)
+      else
+        break
+      end
     end
   end
 end

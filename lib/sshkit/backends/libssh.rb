@@ -109,24 +109,33 @@ module SSHKit
 
         with_session do |session|
           channel = LibSSH::Channel.new(session)
+          io = IO.for_fd(session.fd, autoclose: false)
           channel.open_session do
             if Libssh.config.pty
               channel.request_pty
             end
             channel.request_exec(cmd.to_command)
             until channel.eof?
-              stdout_avail = channel.poll(timeout: 1)
-              if stdout_avail && stdout_avail > 0
-                buf = channel.read(BUFSIZ)
-                cmd.on_stdout(channel, buf)
-                output.log_command_data(cmd, :stdout, buf)
+              IO.select([io])
+
+              loop do
+                buf = channel.read_nonblocking(BUFSIZ)
+                if buf && !buf.empty?
+                  cmd.on_stdout(channel, buf)
+                  output.log_command_data(cmd, :stdout, buf)
+                else
+                  break
+                end
               end
 
-              stderr_avail = channel.poll(stderr: true, timeout: 1)
-              if stderr_avail && stderr_avail > 0
-                buf = channel.read(BUFSIZ, stderr: true)
-                cmd.on_stderr(channel, buf)
-                output.log_command_data(cmd, :stderr, buf)
+              loop do
+                buf = channel.read_nonblocking(BUFSIZ, true)
+                if buf && !buf.empty?
+                  cmd.on_stderr(channel, buf)
+                  output.log_command_data(cmd, :stderr, buf)
+                else
+                  break
+                end
               end
             end
 

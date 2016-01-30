@@ -7,20 +7,14 @@ Style/Documentation:
   Exclude:
     - 'lib/libssh/key.rb' # Documented in ext
 
-Metrics/AbcSize:
-  Enabled: false
-Metrics/ClassLength:
-  Enabled: false
-Metrics/CyclomaticComplexity:
-  Enabled: false
-Metrics/LineLength:
-  Enabled: false
-Metrics/MethodLength:
+Metrics:
   Enabled: false
 
 Style/GlobalVars:
   Exclude:
     - 'ext/libssh_ruby/extconf.rb'
+Style/GuardClause:
+  Enabled: false
 Style/HashSyntax:
   Exclude:
     - 'Rakefile'
