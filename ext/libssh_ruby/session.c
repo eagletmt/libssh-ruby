@@ -459,6 +459,31 @@ static VALUE m_connect(VALUE self) {
   return Qnil;
 }
 
+static void *nogvl_disconnect(void *ptr) {
+  struct nogvl_session_args *args = ptr;
+  ssh_disconnect(args->session);
+  args->rc = 0;
+  return NULL;
+}
+
+/*
+ * @overload disconnect
+ *  Disconnect from a session.
+ *  @return [nil]
+ *  @since 0.3.0
+ *  @see http://api.libssh.org/stable/group__libssh__session.html ssh_disconnect
+ */
+static VALUE m_disconnect(VALUE self) {
+  SessionHolder *holder;
+  struct nogvl_session_args args;
+
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  args.session = holder->session;
+  rb_thread_call_without_gvl(nogvl_disconnect, &args, RUBY_UBF_IO, NULL);
+
+  return Qnil;
+}
+
 /*
  * @overload server_known
  *  Check if the server is knonw.
@@ -666,6 +691,8 @@ void Init_libssh_session() {
                    RUBY_METHOD_FUNC(m_add_identity), 1);
   rb_define_method(rb_cLibSSHSession, "connect", RUBY_METHOD_FUNC(m_connect),
                    0);
+  rb_define_method(rb_cLibSSHSession, "disconnect",
+                   RUBY_METHOD_FUNC(m_disconnect), 0);
   rb_define_method(rb_cLibSSHSession, "server_known",
                    RUBY_METHOD_FUNC(m_server_known), 0);
   rb_define_method(rb_cLibSSHSession, "fd", RUBY_METHOD_FUNC(m_fd), 0);

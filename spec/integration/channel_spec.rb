@@ -11,6 +11,10 @@ RSpec.describe LibSSH::Channel do
     session.add_identity(SshHelper.identity_path)
   end
 
+  after do
+    session.disconnect
+  end
+
   describe '#open_session' do
     context 'without connected session' do
       it 'raises an error' do

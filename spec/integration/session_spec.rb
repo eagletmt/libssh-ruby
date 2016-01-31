@@ -3,6 +3,10 @@ require 'spec_helper'
 RSpec.describe LibSSH::Session do
   let(:session) { described_class.new }
 
+  after do
+    session.disconnect
+  end
+
   describe '#connect' do
     context 'without hostname' do
       it 'raises an error' do
