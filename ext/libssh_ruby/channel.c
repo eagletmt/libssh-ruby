@@ -124,6 +124,11 @@ static VALUE m_open_session(VALUE self) {
   struct nogvl_channel_args args;
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  /* When ssh_channel_open_session is called before ssh_connect, libssh would
+   * crash :-< */
+  if (!ssh_is_connected(ssh_channel_get_session(holder->channel))) {
+    rb_raise(rb_eArgError, "Session isn't connected");
+  }
   args.channel = holder->channel;
   rb_thread_call_without_gvl(nogvl_open_session, &args, RUBY_UBF_IO, NULL);
   RAISE_IF_ERROR(args.rc);
