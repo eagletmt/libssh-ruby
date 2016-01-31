@@ -37,6 +37,7 @@ RSpec.describe LibSSH::Session do
     before do
       session.host = SshHelper.host
       session.port = DockerHelper.port
+      session.user = SshHelper.user
       session.connect
     end
 
@@ -61,6 +62,7 @@ RSpec.describe LibSSH::Session do
     before do
       session.host = SshHelper.host
       session.port = DockerHelper.port
+      session.user = SshHelper.user
       session.connect
     end
 
@@ -72,12 +74,84 @@ RSpec.describe LibSSH::Session do
 
     context 'with valid condition' do
       before do
-        session.user = SshHelper.user
         session.add_identity(SshHelper.identity_path)
       end
 
       it 'returns available methods' do
         expect(session.userauth_publickey_auto).to eq(LibSSH::AUTH_SUCCESS)
+      end
+    end
+  end
+
+  describe '#server_known' do
+    before do
+      session.host = SshHelper.host
+      session.port = DockerHelper.port
+    end
+
+    context 'without known_hosts file' do
+      before do
+        session.knownhosts = SshHelper.absent_known_hosts
+        session.connect
+      end
+
+      it 'returns SERVER_NOT_KNOWN' do
+        expect(session.server_known).to eq(LibSSH::SERVER_NOT_KNOWN)
+      end
+
+      context 'with StrictHostKeyCheck = false' do
+        before do
+          session.stricthostkeycheck = false
+        end
+
+        it 'returns SERVER_KNOWN_OK and writes known_hosts' do
+          expect(File).to_not be_readable(SshHelper.absent_known_hosts)
+          expect(session.server_known).to eq(LibSSH::SERVER_KNOWN_OK)
+          expect(File).to be_readable(SshHelper.absent_known_hosts)
+        end
+      end
+    end
+
+    context 'without known_hosts entry' do
+      before do
+        session.knownhosts = SshHelper.empty_known_hosts
+        session.connect
+      end
+
+      it 'returns SERVER_NOT_KNOWN' do
+        expect(session.server_known).to eq(LibSSH::SERVER_NOT_KNOWN)
+      end
+
+      context 'with StrictHostKeyCheck = false' do
+        before do
+          session.stricthostkeycheck = false
+        end
+
+        it 'returns SERVER_KNOWN_OK' do
+          expect(session.server_known).to eq(LibSSH::SERVER_KNOWN_OK)
+        end
+      end
+    end
+
+    context 'with valid known_hosts entry' do
+      before do
+        session.knownhosts = SshHelper.valid_known_hosts
+        session.connect
+      end
+
+      it 'returns SERVER_KNOWN_OK' do
+        expect(session.server_known).to eq(LibSSH::SERVER_KNOWN_OK)
+      end
+    end
+
+    context 'with invalid known_hosts entry' do
+      before do
+        session.knownhosts = SshHelper.invalid_known_hosts
+        session.connect
+      end
+
+      it 'returns SERVER_KNOWN_CHANGED' do
+        expect(session.server_known).to eq(LibSSH::SERVER_KNOWN_CHANGED)
       end
     end
   end

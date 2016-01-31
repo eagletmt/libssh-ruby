@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'English'
+require 'fileutils'
 require 'json'
 require 'libssh'
 
@@ -53,6 +54,35 @@ module SshHelper
     def identity_path
       File.join(__dir__, 'id_ecdsa')
     end
+
+    def empty_known_hosts
+      File.join(__dir__, 'known_hosts.empty')
+    end
+
+    def absent_known_hosts
+      File.join(__dir__, 'known_hosts.enoent')
+    end
+
+    def valid_known_hosts
+      File.join(__dir__, 'known_hosts.valid')
+    end
+
+    def invalid_known_hosts
+      File.join(__dir__, 'known_hosts.invalid')
+    end
+
+    def prepare_known_hosts
+      FileUtils.rm_f(absent_known_hosts)
+      File.open(empty_known_hosts, 'w') {}
+
+      key = File.read(File.join(__dir__, 'ssh_host_ecdsa_key.pub')).slice(/\Aecdsa-sha2-nistp256 \S+/, 0)
+      File.open(valid_known_hosts, 'w') do |f|
+        f.puts("[#{host}]:#{DockerHelper.port} #{key}")
+      end
+      File.open(invalid_known_hosts, 'w') do |f|
+        f.puts("[#{host}]:#{DockerHelper.port} #{key.sub('A', 'B')}")
+      end
+    end
   end
 end
 
@@ -85,5 +115,9 @@ RSpec.configure do |config|
 
   config.after :suite do
     DockerHelper.stop
+  end
+
+  config.before :each do
+    SshHelper.prepare_known_hosts
   end
 end

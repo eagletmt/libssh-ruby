@@ -14,3 +14,5 @@
 mkmf.log
 
 spec/examples.txt
+spec/known_hosts.valid
+spec/known_hosts.invalid

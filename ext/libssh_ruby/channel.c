@@ -111,6 +111,8 @@ static void *nogvl_open_session(void *ptr) {
   return NULL;
 }
 
+/* FIXME: When Channel#open_session is called before authorization,
+ * #open_session will block infinitely and unable to stop it by C-c. */
 /*
  * @overload open_session
  *  Open a session channel, and close it after the block.
@@ -387,6 +389,8 @@ static void *nogvl_get_exit_status(void *ptr) {
   return NULL;
 }
 
+/* FIXME: When Channel#get_exit_status is called before #request_exec,
+ * #get_exit_status will block infinitely and unable to stop it by C-c. */
 /*
  * @overload get_exit_status
  *  Get the exit status of the channel.
