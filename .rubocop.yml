@@ -6,6 +6,7 @@ AllCops:
 Style/Documentation:
   Exclude:
     - 'lib/libssh/key.rb' # Documented in ext
+    - 'spec/**'
 
 Metrics:
   Enabled: false
