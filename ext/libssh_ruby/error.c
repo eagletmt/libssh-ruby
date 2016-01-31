@@ -18,7 +18,7 @@ ID id_code;
 void Init_libssh_error(void) {
   rb_eLibSSHError =
       rb_define_class_under(rb_mLibSSH, "Error", rb_eStandardError);
-  id_code = rb_intern("code");
+  id_code = rb_intern("@code");
 
   rb_define_attr(rb_eLibSSHError, "code", 1, 0);
 }
