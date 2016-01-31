@@ -293,8 +293,8 @@ static VALUE m_set_hostkeys(VALUE self, VALUE hostkeys) {
  */
 static VALUE m_set_compression(VALUE self, VALUE compression) {
   SessionHolder *holder;
-  char *val;
   if (compression == Qtrue || compression == Qfalse) {
+    const char *val;
     if (compression == Qtrue) {
       val = "yes";
     } else {
