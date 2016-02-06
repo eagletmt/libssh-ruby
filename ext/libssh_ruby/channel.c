@@ -105,14 +105,34 @@ static VALUE m_close(VALUE self) {
   return Qnil;
 }
 
+static void select_session(ssh_session session) {
+  fd_set fds;
+  int fd;
+
+  FD_ZERO(&fds);
+  fd = ssh_get_fd(session);
+  FD_SET(fd, &fds);
+  select(fd + 1, &fds, NULL, NULL, NULL);
+}
+
 static void *nogvl_open_session(void *ptr) {
   struct nogvl_channel_args *args = ptr;
-  args->rc = ssh_channel_open_session(args->channel);
+  ssh_session session = ssh_channel_get_session(args->channel);
+  int blocking = ssh_is_blocking(session);
+
+  ssh_set_blocking(session, 0);
+  while (1) {
+    args->rc = ssh_channel_open_session(args->channel);
+    if (args->rc != SSH_AGAIN) {
+      break;
+    }
+    rb_thread_check_ints();
+    select_session(session);
+  }
+  ssh_set_blocking(session, blocking);
   return NULL;
 }
 
-/* FIXME: When Channel#open_session is called before authorization,
- * #open_session will block infinitely and unable to stop it by C-c. */
 /*
  * @overload open_session
  *  Open a session channel, and close it after the block.
@@ -385,12 +405,22 @@ static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
 
 static void *nogvl_get_exit_status(void *ptr) {
   struct nogvl_channel_args *args = ptr;
-  args->rc = ssh_channel_get_exit_status(args->channel);
+  ssh_session session = ssh_channel_get_session(args->channel);
+  int blocking = ssh_is_blocking(session);
+
+  ssh_set_blocking(session, 0);
+  while (1) {
+    args->rc = ssh_channel_get_exit_status(args->channel);
+    if (args->rc != SSH_ERROR) {
+      break;
+    }
+    rb_thread_check_ints();
+    select_session(session);
+  }
+  ssh_set_blocking(session, blocking);
   return NULL;
 }
 
-/* FIXME: When Channel#get_exit_status is called before #request_exec,
- * #get_exit_status will block infinitely and unable to stop it by C-c. */
 /*
  * @overload get_exit_status
  *  Get the exit status of the channel.
