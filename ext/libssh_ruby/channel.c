@@ -118,18 +118,18 @@ static void select_session(ssh_session session) {
 static void *nogvl_open_session(void *ptr) {
   struct nogvl_channel_args *args = ptr;
   ssh_session session = ssh_channel_get_session(args->channel);
-  int blocking = ssh_is_blocking(session);
 
-  ssh_set_blocking(session, 0);
   while (1) {
+    int blocking = ssh_is_blocking(session);
+    ssh_set_blocking(session, 0);
     args->rc = ssh_channel_open_session(args->channel);
+    ssh_set_blocking(session, blocking);
     if (args->rc != SSH_AGAIN) {
       break;
     }
     rb_thread_check_ints();
     select_session(session);
   }
-  ssh_set_blocking(session, blocking);
   return NULL;
 }
 
@@ -172,19 +172,19 @@ struct nogvl_open_forward_args {
 static void *nogvl_open_forward(void *ptr) {
   struct nogvl_open_forward_args *args = ptr;
   ssh_session session = ssh_channel_get_session(args->channel);
-  int blocking = ssh_is_blocking(session);
 
-  ssh_set_blocking(session, 0);
   while (1) {
+    int blocking = ssh_is_blocking(session);
+    ssh_set_blocking(session, 0);
     args->rc = ssh_channel_open_forward(args->channel, args->remote_host,
                                         args->remote_port, "localhost", 22);
+    ssh_set_blocking(session, blocking);
     if (args->rc != SSH_AGAIN) {
       break;
     }
     rb_thread_check_ints();
     select_session(session);
   }
-  ssh_set_blocking(session, blocking);
   return NULL;
 }
 
@@ -491,18 +491,18 @@ static VALUE m_poll(int argc, VALUE *argv, VALUE self) {
 static void *nogvl_get_exit_status(void *ptr) {
   struct nogvl_channel_args *args = ptr;
   ssh_session session = ssh_channel_get_session(args->channel);
-  int blocking = ssh_is_blocking(session);
 
-  ssh_set_blocking(session, 0);
   while (1) {
+    int blocking = ssh_is_blocking(session);
+    ssh_set_blocking(session, 0);
     args->rc = ssh_channel_get_exit_status(args->channel);
     if (args->rc != SSH_ERROR) {
       break;
     }
+    ssh_set_blocking(session, blocking);
     rb_thread_check_ints();
     select_session(session);
   }
-  ssh_set_blocking(session, blocking);
   return NULL;
 }
 
