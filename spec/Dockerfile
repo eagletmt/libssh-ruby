@@ -1,9 +1,8 @@
-FROM ubuntu:14.04
+FROM alpine:3.3
 
-RUN apt-get update && apt-get install -y openssh-server
-RUN mkdir /var/run/sshd
+RUN apk add openssh --update
 
-RUN useradd -m alice
+RUN adduser -D alice && (echo alice:alice | chpasswd)
 COPY id_ecdsa /home/alice/.ssh/id_ecdsa
 COPY id_ecdsa.pub /home/alice/.ssh/id_ecdsa.pub
 COPY id_ecdsa.pub /home/alice/.ssh/authorized_keys
@@ -14,6 +13,7 @@ RUN chmod 600 /home/alice/.ssh/* \
   && chown -R alice:alice /home/alice \
   && chmod 600 /etc/ssh/ssh_host_ecdsa_key \
   && chmod 644 /etc/ssh/ssh_host_ecdsa_key.pub
+COPY sshd_config /etc/ssh/sshd_config
 
 EXPOSE 22
-CMD ["/usr/sbin/sshd", "-D", "-E", "/var/log/sshd.log"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]

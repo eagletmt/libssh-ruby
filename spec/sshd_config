@@ -1,0 +1,10 @@
+AuthorizedKeysFile .ssh/authorized_keys
+
+UsePAM no
+ChallengeResponseAuthentication no
+PasswordAuthentication yes
+PermitEmptyPasswords no
+PermitRootLogin no
+
+PrintMotd no
+UsePrivilegeSeparation sandbox
