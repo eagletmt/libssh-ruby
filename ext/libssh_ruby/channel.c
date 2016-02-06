@@ -547,6 +547,76 @@ static VALUE m_send_eof(VALUE self) {
   return Qnil;
 }
 
+struct nogvl_select_args {
+  ssh_channel *read_channels, *write_channels, *except_channels;
+  struct timeval *timeout;
+  int rc;
+};
+
+static void *nogvl_select(void *ptr) {
+  struct nogvl_select_args *args = ptr;
+  args->rc = ssh_channel_select(args->read_channels, args->write_channels,
+                                args->except_channels, args->timeout);
+  return NULL;
+}
+
+static void set_select_channels(ssh_channel **c_channels, VALUE rb_channels) {
+  long i, len;
+
+  Check_Type(rb_channels, T_ARRAY);
+  len = RARRAY_LEN(rb_channels);
+  if (len == 0) {
+    *c_channels = NULL;
+  } else {
+    for (i = 0; i < len; i++) {
+      Check_TypedStruct(RARRAY_AREF(rb_channels, i), &channel_type);
+    }
+    *c_channels = ALLOC_N(ssh_channel, len+1);
+    for (i = 0; i < len; i++) {
+      ChannelHolder *holder;
+      TypedData_Get_Struct(RARRAY_AREF(rb_channels, i), ChannelHolder,
+          &channel_type, holder);
+      (*c_channels)[i] = holder->channel;
+    }
+    (*c_channels)[len] = NULL;
+  }
+}
+
+/*
+ * @overload select(read_channels, write_channels, except_channels, timeout)
+ *  Act like the standard select(2) on channels.
+ *  @param [Array<Channel>] read_channels
+ *  @param [Array<Channel>] write_channels
+ *  @param [Array<Channel>] except_channels
+ *  @param [Fixnum] timeout timeout in seconds.
+ *  @return [nil]
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_select
+ */
+static VALUE s_select(RB_UNUSED_VAR(VALUE self), VALUE read_channels,
+                      VALUE write_channels, VALUE except_channels,
+                      VALUE timeout) {
+  struct nogvl_select_args args;
+  struct timeval tv;
+
+  if (NIL_P(timeout)) {
+    args.timeout = NULL;
+  } else {
+    Check_Type(timeout, T_FIXNUM);
+    tv.tv_sec = FIX2INT(timeout);
+    tv.tv_usec = 0;
+    args.timeout = &tv;
+  }
+  set_select_channels(&args.read_channels, read_channels);
+  set_select_channels(&args.write_channels, write_channels);
+  set_select_channels(&args.except_channels, except_channels);
+  rb_thread_call_without_gvl(nogvl_select, &args, RUBY_UBF_IO, NULL);
+  ruby_xfree(args.read_channels);
+  ruby_xfree(args.write_channels);
+  ruby_xfree(args.except_channels);
+  return Qnil;
+}
+
 /*
  * Document-class: LibSSH::Channel
  * Wrapper for ssh_channel struct in libssh.
@@ -582,6 +652,9 @@ void Init_libssh_channel(void) {
   rb_define_method(rb_cLibSSHChannel, "write", RUBY_METHOD_FUNC(m_write), 1);
   rb_define_method(rb_cLibSSHChannel, "send_eof", RUBY_METHOD_FUNC(m_send_eof),
                    0);
+
+  rb_define_singleton_method(rb_cLibSSHChannel, "select",
+                             RUBY_METHOD_FUNC(s_select), 4);
 
   id_stderr = rb_intern("stderr");
   id_timeout = rb_intern("timeout");
