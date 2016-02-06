@@ -1,6 +1,10 @@
 require 'mkmf'
 
-$CFLAGS << ' -Wall -W'
+if ENV['LIBSSH_CFLAGS']
+  $CFLAGS = ENV['LIBSSH_CFLAGS']
+else
+  $CFLAGS << ' -Wall -W'
+end
 
 have_header('libssh/libssh.h')
 have_library('ssh')
