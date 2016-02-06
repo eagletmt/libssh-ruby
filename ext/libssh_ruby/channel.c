@@ -162,6 +162,61 @@ static VALUE m_open_session(VALUE self) {
   }
 }
 
+struct nogvl_open_forward_args {
+  ssh_channel channel;
+  const char *remote_host;
+  int remote_port;
+  int rc;
+};
+
+static void *nogvl_open_forward(void *ptr) {
+  struct nogvl_open_forward_args *args = ptr;
+  ssh_session session = ssh_channel_get_session(args->channel);
+  int blocking = ssh_is_blocking(session);
+
+  ssh_set_blocking(session, 0);
+  while (1) {
+    args->rc = ssh_channel_open_forward(args->channel, args->remote_host,
+                                        args->remote_port, "localhost", 22);
+    if (args->rc != SSH_AGAIN) {
+      break;
+    }
+    rb_thread_check_ints();
+    select_session(session);
+  }
+  ssh_set_blocking(session, blocking);
+  return NULL;
+}
+
+/*
+ * @overload open_forward(remote_host, remote_port)
+ *  Open a TCP/IP forwarding channel.
+ *  @param [String] remote_host The remote host to connected.
+ *  @param [Fixnum] remote_port The remote port.
+ *  @return [nil]
+ *  @since 0.4.0
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_open_forward
+ */
+static VALUE m_open_forward(VALUE self, VALUE remote_host, VALUE remote_port) {
+  ChannelHolder *holder;
+  struct nogvl_open_forward_args args;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  args.remote_host = StringValueCStr(remote_host);
+  Check_Type(remote_port, T_FIXNUM);
+  args.remote_port = FIX2INT(remote_port);
+  args.channel = holder->channel;
+  rb_thread_call_without_gvl(nogvl_open_forward, &args, RUBY_UBF_IO, NULL);
+  RAISE_IF_ERROR(args.rc);
+
+  if (rb_block_given_p()) {
+    return rb_ensure(rb_yield, Qnil, m_close, self);
+  } else {
+    return Qnil;
+  }
+}
+
 struct nogvl_request_exec_args {
   ssh_channel channel;
   char *cmd;
@@ -518,6 +573,8 @@ void Init_libssh_channel(void) {
                    RUBY_METHOD_FUNC(m_initialize), 1);
   rb_define_method(rb_cLibSSHChannel, "open_session",
                    RUBY_METHOD_FUNC(m_open_session), 0);
+  rb_define_method(rb_cLibSSHChannel, "open_forward",
+                   RUBY_METHOD_FUNC(m_open_forward), 2);
   rb_define_method(rb_cLibSSHChannel, "close", RUBY_METHOD_FUNC(m_close), 0);
   rb_define_method(rb_cLibSSHChannel, "request_exec",
                    RUBY_METHOD_FUNC(m_request_exec), 1);
