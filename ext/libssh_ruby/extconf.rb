@@ -8,6 +8,7 @@ end
 
 have_header('libssh/libssh.h')
 have_library('ssh')
+have_library('ssh_threads')
 have_const('SSH_KEYTYPE_ED25519', 'libssh/libssh.h')
 
 create_makefile('libssh/libssh_ruby')

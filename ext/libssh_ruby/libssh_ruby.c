@@ -1,4 +1,5 @@
 #include "libssh_ruby.h"
+#include <libssh/callbacks.h>
 
 VALUE rb_mLibSSH;
 
@@ -26,6 +27,9 @@ static VALUE m_version(int argc, VALUE *argv, RB_UNUSED_VAR(VALUE self)) {
 }
 
 void Init_libssh_ruby(void) {
+  ssh_threads_set_callbacks(ssh_threads_get_pthread());
+  ssh_init();
+
   rb_mLibSSH = rb_define_module("LibSSH");
 
   /* @see Session#server_known */
