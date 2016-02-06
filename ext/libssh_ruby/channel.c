@@ -151,23 +151,13 @@ struct nogvl_open_forward_args {
 
 static void *nogvl_open_forward(void *ptr) {
   struct nogvl_open_forward_args *args = ptr;
-  ssh_session session = ssh_channel_get_session(args->channel);
-
-  while (1) {
-    int blocking = ssh_is_blocking(session);
-    ssh_set_blocking(session, 0);
-    args->rc = ssh_channel_open_forward(args->channel, args->remote_host,
-                                        args->remote_port, "localhost", 22);
-    ssh_set_blocking(session, blocking);
-    if (args->rc != SSH_AGAIN) {
-      break;
-    }
-    rb_thread_check_ints();
-    select_session(session);
-  }
+  args->rc = ssh_channel_open_forward(args->channel, args->remote_host,
+                                      args->remote_port, "localhost", 22);
   return NULL;
 }
 
+/* FIXME: When Channel#open_forward is called before authorization,
+ * #open_session will block infinitely and unable to stop it by C-c. */
 /*
  * @overload open_forward(remote_host, remote_port)
  *  Open a TCP/IP forwarding channel.
