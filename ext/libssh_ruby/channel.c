@@ -588,7 +588,7 @@ static void set_select_channels(ssh_channel **c_channels, VALUE rb_channels) {
  *  @param [Array<Channel>] read_channels
  *  @param [Array<Channel>] write_channels
  *  @param [Array<Channel>] except_channels
- *  @param [Fixnum] timeout timeout in seconds.
+ *  @param [Fixnum, nil] timeout timeout in seconds.
  *  @return [nil]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_select

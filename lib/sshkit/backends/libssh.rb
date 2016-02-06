@@ -1,5 +1,4 @@
 require 'libssh'
-require 'io/wait'
 require 'sshkit/backends/abstract'
 require 'sshkit/backends/connection_pool'
 
@@ -53,8 +52,11 @@ module SSHKit
             scp.init do
               scp.push_file(File.basename(remote), io.size, mode)
               info "Uploading #{remote}"
-              while (buf = io.read(BUFSIZ))
-                scp.write(buf)
+              begin
+                loop do
+                  scp.write(io.readpartial(BUFSIZ))
+                end
+              rescue EOFError
               end
             end
           end
@@ -110,33 +112,24 @@ module SSHKit
 
         with_session do |session|
           channel = LibSSH::Channel.new(session)
-          io = IO.for_fd(session.fd, autoclose: false)
           channel.open_session do
             if Libssh.config.pty
               channel.request_pty
             end
             channel.request_exec(cmd.to_command)
             until channel.eof?
-              io.wait_readable
+              LibSSH::Channel.select([channel], [], [], nil)
 
-              loop do
-                buf = channel.read_nonblocking(BUFSIZ)
-                if buf && !buf.empty?
-                  cmd.on_stdout(channel, buf)
-                  output.log_command_data(cmd, :stdout, buf)
-                else
-                  break
-                end
+              buf = channel.read_nonblocking(BUFSIZ)
+              if buf && !buf.empty?
+                cmd.on_stdout(channel, buf)
+                output.log_command_data(cmd, :stdout, buf)
               end
 
-              loop do
-                buf = channel.read_nonblocking(BUFSIZ, true)
-                if buf && !buf.empty?
-                  cmd.on_stderr(channel, buf)
-                  output.log_command_data(cmd, :stderr, buf)
-                else
-                  break
-                end
+              buf = channel.read_nonblocking(BUFSIZ, stderr: true)
+              if buf && !buf.empty?
+                cmd.on_stderr(channel, buf)
+                output.log_command_data(cmd, :stderr, buf)
               end
             end
 
