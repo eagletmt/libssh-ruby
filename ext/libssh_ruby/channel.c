@@ -388,7 +388,7 @@ static VALUE m_read_nonblocking(int argc, VALUE *argv, VALUE self) {
 
 /*
  * @overload eof?
- *  Check if remote ha sent an EOF.
+ *  Check if remote has sent an EOF.
  *  @return [Boolean]
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
  *    ssh_channel_is_eof
@@ -398,6 +398,36 @@ static VALUE m_eof_p(VALUE self) {
 
   TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
   return ssh_channel_is_eof(holder->channel) ? Qtrue : Qfalse;
+}
+
+/*
+ * @overload closed?
+ *  Check if the channel is closed or not.
+ *  @return [Boolean]
+ *  @since 0.4.0
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_is_closed
+ */
+static VALUE m_closed_p(VALUE self) {
+  ChannelHolder *holder;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  return ssh_channel_is_closed(holder->channel) ? Qtrue : Qfalse;
+}
+
+/*
+ * @overload open?
+ *  Check if the channel is open or not.
+ *  @return [Boolean]
+ *  @since 0.4.0
+ *  @see http://api.libssh.org/stable/group__libssh__channel.html
+ *    ssh_channel_is_open
+ */
+static VALUE m_open_p(VALUE self) {
+  ChannelHolder *holder;
+
+  TypedData_Get_Struct(self, ChannelHolder, &channel_type, holder);
+  return ssh_channel_is_open(holder->channel) ? Qtrue : Qfalse;
 }
 
 struct nogvl_poll_args {
@@ -585,6 +615,8 @@ void Init_libssh_channel(void) {
                    RUBY_METHOD_FUNC(m_read_nonblocking), -1);
   rb_define_method(rb_cLibSSHChannel, "poll", RUBY_METHOD_FUNC(m_poll), -1);
   rb_define_method(rb_cLibSSHChannel, "eof?", RUBY_METHOD_FUNC(m_eof_p), 0);
+  rb_define_method(rb_cLibSSHChannel, "closed?", RUBY_METHOD_FUNC(m_closed_p), 0);
+  rb_define_method(rb_cLibSSHChannel, "open?", RUBY_METHOD_FUNC(m_open_p), 0);
   rb_define_method(rb_cLibSSHChannel, "get_exit_status",
                    RUBY_METHOD_FUNC(m_get_exit_status), 0);
   rb_define_method(rb_cLibSSHChannel, "write", RUBY_METHOD_FUNC(m_write), 1);
