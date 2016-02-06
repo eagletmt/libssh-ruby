@@ -291,10 +291,10 @@ static void *nogvl_read(void *ptr) {
 }
 
 /*
- * @overload read(count, is_stderr: false, timeout: -1)
+ * @overload read(count, stderr: false, timeout: -1)
  *  Read data from a channel.
  *  @param [Fixnum] count The count of bytes to be read.
- *  @param [Boolean] is_stderr Read from the stderr flow or not.
+ *  @param [Boolean] stderr Read from the stderr flow or not.
  *  @param [Fixnum] timeout A timeout in seconds. +-1+ means infinite timeout.
  *  @return [String] Data read from the channel.
  *  @see http://api.libssh.org/stable/group__libssh__channel.html
@@ -445,9 +445,9 @@ static void *nogvl_poll(void *ptr) {
 }
 
 /*
- * @overload poll(is_stderr: false, timeout: -1)
+ * @overload poll(stderr: false, timeout: -1)
  *  Poll a channel for data to read.
- *  @param [Boolean] is_stderr A boolean to select the stderr stream.
+ *  @param [Boolean] stderr A boolean to select the stderr stream.
  *  @param [Fixnum] timeout A timeout in milliseconds. A negative value means an
  *    infinite timeout.
  *  @return [Fixnum, nil] The number of bytes available for reading. +nil+ if
