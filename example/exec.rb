@@ -38,7 +38,6 @@ end
 bufsiz = 16384
 
 channel = LibSSH::Channel.new(session)
-io = IO.for_fd(session.fd, autoclose: false)
 channel.open_session do
   channel.request_exec('ps auxf')
   until channel.eof?

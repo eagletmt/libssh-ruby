@@ -56,6 +56,7 @@ module SSHKit
                 loop do
                   scp.write(io.readpartial(BUFSIZ))
                 end
+              # rubocop:disable Lint/HandleExceptions
               rescue EOFError
               end
             end

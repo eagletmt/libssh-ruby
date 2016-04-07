@@ -37,6 +37,7 @@ server_thread = Thread.start do
           loop do
             channel.write(socket.readpartial(bufsiz))
           end
+        # rubocop:disable Lint/HandleExceptions
         rescue EOFError
         end
         channel.send_eof
