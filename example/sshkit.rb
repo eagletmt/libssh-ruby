@@ -15,6 +15,8 @@ end
 SSHKit.config.output = SSHKit::Formatter::Pretty.new($stdout)
 SSHKit.config.output_verbosity = :debug
 
+include SSHKit::DSL
+
 on %w[barkhorn rossmann], in: :parallel do |host|
   date = capture(:date)
   puts "#{host}: #{date}"

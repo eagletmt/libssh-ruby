@@ -38,6 +38,7 @@ See [example](example) directory.
 See [example/sshkit.rb](example/sshkit.rb) .
 
 ### With Capistrano
+sshkit must be v1.9.0 or later due to [SSHKit::Backend::ConnectionPool API change](https://github.com/capistrano/sshkit/releases/tag/v1.9.0.rc1).
 
 ```ruby
 require 'sshkit/backends/libssh'

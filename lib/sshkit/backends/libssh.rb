@@ -175,30 +175,26 @@ module SSHKit
         end
       end
 
-      def with_session
+      def with_session(&block)
         host.ssh_options = Libssh.config.ssh_options.merge(host.ssh_options || {})
-        entry = self.class.pool.checkout(String(host.hostname), host.username, host.netssh_options) do |hostname, username, ssh_options|
-          LibSSH::Session.new.tap do |session|
-            session.host = hostname
-            username = ssh_options.fetch(:user, username)
-            if username
-              session.user = username
-            end
-            configure_session(session, ssh_options)
-            session.connect
-            if session.server_known != LibSSH::SERVER_KNOWN_OK
-              raise 'unknown host'
-            end
-            if session.userauth_publickey_auto != LibSSH::AUTH_SUCCESS
-              raise 'authorization failed'
-            end
-          end
-        end
+        self.class.pool.with(method(:create_session), String(host.hostname), host.username, host.netssh_options, &block)
+      end
 
-        begin
-          yield entry.connection
-        ensure
-          self.class.pool.checkin(entry)
+      def create_session(hostname, username, ssh_options)
+        LibSSH::Session.new.tap do |session|
+          session.host = hostname
+          username = ssh_options.fetch(:user, username)
+          if username
+            session.user = username
+          end
+          configure_session(session, ssh_options)
+          session.connect
+          if session.server_known != LibSSH::SERVER_KNOWN_OK
+            raise 'unknown host'
+          end
+          if session.userauth_publickey_auto != LibSSH::AUTH_SUCCESS
+            raise 'authorization failed'
+          end
         end
       end
 
