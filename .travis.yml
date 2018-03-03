@@ -7,7 +7,9 @@ addons:
       - libssh-dev
 rvm:
   - 2.2
-  - 2.3.0
+  - 2.3
+  - 2.4
+  - 2.5
   - ruby-head
 before_install:
   - gem install --no-rdoc --no-ri bundler
