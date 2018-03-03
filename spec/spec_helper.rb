@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'English'
 require 'fileutils'
 require 'json'
@@ -22,7 +23,7 @@ module DockerHelper
 
     def stop
       unless system('docker', 'stop', '-t', '0', @container_id, out: File::NULL)
-        $stderr.puts "[WARN] Cannot stop Docker container #{@container_id}"
+        warn "Cannot stop Docker container #{@container_id}"
       end
     end
 

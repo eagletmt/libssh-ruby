@@ -15,7 +15,7 @@ end
 SSHKit.config.output = SSHKit::Formatter::Pretty.new($stdout)
 SSHKit.config.output_verbosity = :debug
 
-include SSHKit::DSL
+include SSHKit::DSL # rubocop:disable Style/MixinUsage
 
 on %w[barkhorn rossmann], in: :parallel do |host|
   date = capture(:date)
@@ -24,7 +24,7 @@ end
 
 on %w[barkhorn rossmann], in: :parallel do
   execute :ruby, '-e', Shellwords.escape('puts "stdout"; $stderr.puts "stderr"')
-  execute :false, raise_on_non_zero_exit: false
+  execute :false, raise_on_non_zero_exit: false # rubocop:disable Lint/BooleanSymbol
 end
 
 on %w[barkhorn rossmann], in: :parallel do |host|

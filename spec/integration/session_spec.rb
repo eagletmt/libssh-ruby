@@ -57,7 +57,7 @@ RSpec.describe LibSSH::Session do
       end
 
       it 'returns available methods' do
-        expect(session.userauth_list).to match_array([:publickey, :password])
+        expect(session.userauth_list).to match_array(%i[publickey password])
       end
     end
   end

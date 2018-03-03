@@ -56,8 +56,7 @@ module SSHKit
                 loop do
                   scp.write(io.readpartial(BUFSIZ))
                 end
-              # rubocop:disable Lint/HandleExceptions
-              rescue EOFError
+              rescue EOFError # rubocop:disable Lint/HandleExceptions
               end
             end
           end
@@ -143,7 +142,7 @@ module SSHKit
       def wrap_local_reader(local)
         if local.respond_to?(:read)
           # local is IO-like object
-          yield(local, 0644)
+          yield(local, 0o644)
         else
           File.open(local, 'rb') do |f|
             yield(f, File.stat(local).mode & 0xfff)
@@ -217,7 +216,7 @@ module SSHKit
           when true
             # Load from default ssh_config
             session.parse_config
-          when false, nil
+          when false, nil # rubocop:disable Lint/EmptyWhen
             # Don't load from ssh_config
           else
             # Load from specified path

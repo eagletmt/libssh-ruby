@@ -10,7 +10,7 @@ end
 
 RSpec::Core::RakeTask.new(:spec)
 
-task :default => [:clobber, :compile, :docker, :spec]
+task :default => %i[clobber compile docker spec]
 
 desc 'Build docker image for integration test'
 task :docker do

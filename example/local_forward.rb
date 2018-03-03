@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 require 'libssh'
 require 'socket'
-require 'thread'
-
 GC.stress = true
 
 ssh_host = 'rossmann'
@@ -37,8 +35,7 @@ server_thread = Thread.start do
           loop do
             channel.write(socket.readpartial(bufsiz))
           end
-        # rubocop:disable Lint/HandleExceptions
-        rescue EOFError
+        rescue EOFError # rubocop:disable Lint/HandleExceptions
         end
         channel.send_eof
       end
