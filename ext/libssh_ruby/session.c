@@ -603,6 +603,7 @@ static VALUE m_userauth_publickey_auto(VALUE self) {
   args.session = holder->session;
   rb_thread_call_without_gvl(nogvl_userauth_publickey_auto, &args, RUBY_UBF_IO,
                              NULL);
+  RAISE_IF_ERROR(args.rc);
   return INT2FIX(args.rc);
 }
 
