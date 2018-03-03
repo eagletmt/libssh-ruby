@@ -51,6 +51,10 @@ module SshHelper
       'alice'
     end
 
+    def password
+      'alice'
+    end
+
     def identity_path
       File.join(__dir__, 'id_ecdsa')
     end

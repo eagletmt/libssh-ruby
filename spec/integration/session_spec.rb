@@ -87,6 +87,27 @@ RSpec.describe LibSSH::Session do
     end
   end
 
+  describe '#userauth_password' do
+    before do
+      session.host = SshHelper.host
+      session.port = DockerHelper.port
+      session.user = SshHelper.user
+      session.connect
+    end
+
+    context 'wrong password' do
+      it 'is denied' do
+        expect(session.userauth_password('12345')).to eq(LibSSH::AUTH_DENIED)
+      end
+    end
+
+    context 'with valid password' do
+      it 'access is granted' do
+        expect(session.userauth_password(SshHelper.password)).to eq(LibSSH::AUTH_SUCCESS)
+      end
+    end
+  end
+
   describe '#server_known' do
     before do
       session.host = SshHelper.host

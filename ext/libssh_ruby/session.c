@@ -530,6 +530,23 @@ static VALUE m_userauth_none(VALUE self) {
 }
 
 /*
+ * @overload userauth_password
+ *  Try to authenticate through the "password" method.
+ *  @param [String] password
+ *  @return [Fixnum]
+ *  @see http://api.libssh.org/stable/group__libssh__auth.html ssh_userauth_password
+ */
+static VALUE m_userauth_password(VALUE self, VALUE password) {
+  SessionHolder *holder;
+  int rc;
+
+  TypedData_Get_Struct(self, SessionHolder, &session_type, holder);
+  rc = ssh_userauth_password(holder->session, NULL, StringValueCStr(password));
+  RAISE_IF_ERROR(rc);
+  return INT2FIX(rc);
+}
+
+/*
  * @overload userauth_list
  *  Get available authentication methods from the server.
  *  @return [Array<Symbol>]
@@ -699,6 +716,8 @@ void Init_libssh_session() {
 
   rb_define_method(rb_cLibSSHSession, "userauth_none",
                    RUBY_METHOD_FUNC(m_userauth_none), 0);
+  rb_define_method(rb_cLibSSHSession, "userauth_password",
+                   RUBY_METHOD_FUNC(m_userauth_password), 1);
   rb_define_method(rb_cLibSSHSession, "userauth_list",
                    RUBY_METHOD_FUNC(m_userauth_list), 0);
   rb_define_method(rb_cLibSSHSession, "userauth_publickey_auto",
