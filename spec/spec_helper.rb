@@ -32,7 +32,7 @@ module DockerHelper
 
     def wait_for_ready
       10.times do
-        if system('docker', 'run', "--link=#{@container_id}:sshd", IMAGE_NAME, 'ssh', '-i', '/home/alice/.ssh/id_ecdsa', '-oStrictHostKeyChecking=no', 'alice@sshd', 'exit', '0', err: File::NULL)
+        if system('docker', 'run', "--link=#{@container_id}:sshd", IMAGE_NAME, 'ssh', '-i', '/home/alice/.ssh/id_ed25519', '-oStrictHostKeyChecking=no', 'alice@sshd', 'exit', '0', err: File::NULL)
           return
         end
       end
@@ -55,8 +55,17 @@ module SshHelper
       'alice'
     end
 
+    def default_key_type
+      @default_key_type ||=
+        if Gem::Version.new(LibSSH.version.split('/').first) >= Gem::Version.new('0.7.0')
+          'ed25519'
+        else
+          'ecdsa'
+        end
+    end
+
     def identity_path
-      File.join(__dir__, 'id_ecdsa')
+      File.join(__dir__, "id_#{default_key_type}")
     end
 
     def empty_known_hosts
@@ -79,7 +88,7 @@ module SshHelper
       FileUtils.rm_f(absent_known_hosts)
       File.open(empty_known_hosts, 'w') {}
 
-      key = File.read(File.join(__dir__, 'ssh_host_ecdsa_key.pub')).slice(/\Aecdsa-sha2-nistp256 \S+/, 0)
+      key = File.read(File.join(__dir__, "ssh_host_#{default_key_type}_key.pub")).slice(/\A[^ ]+ \S+/, 0)
       File.open(valid_known_hosts, 'w') do |f|
         f.puts("[#{host}]:#{DockerHelper.port} #{key}")
       end
