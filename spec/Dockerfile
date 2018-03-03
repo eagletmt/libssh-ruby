@@ -1,6 +1,6 @@
-FROM alpine:3.3
+FROM alpine:3.7
 
-RUN apk add openssh --update
+RUN apk add openssh --no-cache
 
 RUN adduser -D alice && (echo alice:alice | chpasswd)
 COPY id_ecdsa /home/alice/.ssh/id_ecdsa
