@@ -1,3 +1,6 @@
+## 0.4.0 (2018-03-03)
+- Add `Session#userauth_password`
+
 ## 0.3.1 (2016-04-08)
 - Fix SSHKit::Backend::Libssh for SSHKit v1.9.0
     - libssh now requires SSHKit v1.9.0 or later.
